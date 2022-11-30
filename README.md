@@ -65,20 +65,3 @@ These are the systems that are currently planned:
 ## Dependencies
 
 *Coming soon*
-
-
-## Project Roadmap
-
-- [docs](docs)
-  - [components](docs/components)
-  - [images](docs/images)
-  - [code_conventions.md](docs/code_conventions.md)
-  - [error\_codes.md](docs/error_codes.md)
-  - [pinmap.md](docs/pinmap.md)
-  - [schedule.md](docs/schedule.md)
-  - [TODO.md](docs/TODO.md)
-- [include](include)
-- [notes](notes)
-- [recovery](recovery)
-- [telemetry](telemetry)
-  
