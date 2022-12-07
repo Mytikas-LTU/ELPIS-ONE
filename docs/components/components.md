@@ -15,32 +15,16 @@
   - Camera: [Arduino Camera ov7670]( https://www.electrokit.com/produkt/kameramodul-640x480-ov7670-med-fifo/ ) /
 -->
 
-
-### Telemetry  
 | Part            | Module                   | Datasheet                        | Other                                        | Used in design           |
 | --------------- | ------------------------ | -------------------------------- | -------------------------------------------- | ------------------------ |
 | Microcontroller | [LilyGo TTGO LoRa32]     | [Datasheet][TTGO datasheet]      | [Pin Diagram][Pin Diagram], [TTGO GitHub]    | :heavy_check_mark:       |
 | IMU             | [MPU6050 MMC5883 BMP085] |                                  | Out of stock                                 | :heavy_multiplication_x: |
 | IMU             | [LSM6DSO32]              | [Datasheet][LSM6DSO32 datasheet] |                                              | :heavy_check_mark:       |
 | Barometer       | [BMP280]                 | [Datasheet][BMP280 datasheet]    |                                              | :heavy_check_mark:       |
-| Accelerometer   | [ADXL345]                | [Datasheet][ADXL345 datasheet]   |                                              |                          |
-| Accelerometer   | [ADXL377]                | [Datasheet][ADXL377 datasheet]   |                                              |                          |
 | Accelerometer   | [MPU6050]                | [Datasheet][MPU6050 datasheet]   |                                              | :heavy_check_mark:       |
 | GPS             | TBD                      |                                  |                                              |                          |
-| Flashminne      | [23LC1024]               | [Datasheet][23LC1024 datasheet]  | ||
+| Flashminne      | [23LC1024]               | [Datasheet][23LC1024 datasheet]  | |                                            |                          |
 
-### Recovery 
-| Part            | Module               | Datasheet                   | Other                                        | Used in design     |
-| --------------- | -------------------- | --------------------------- | -------------------------------------------- | ------------------ |
-| Microcontroller | [LilyGo TTGO LoRa32] | [Datasheet][TTGO datasheet] | [Pin Diagram][Pin Diagram], [TTGO GitHub]    | :heavy_check_mark: |
-| GPS             | TBD                  |                             |                                              |                    |
-
-
-### Camera  
-| Part            | Module | Datasheet                     | Other                    | Used in design |
-| --------------- | ------ | ----------------------------- | ------------------------ | -------------- |
-| Microcontroller |
-| Camera          | OV5647 | [Datasheet][OV5647 datasheet] | Sensitivity: TBD from DS | TBD            |
 
 [LilyGo TTGO LoRa32]: http://www.lilygo.cn/prod_view.aspx?TypeId=50060&Id=1326&FId=t3:50060:3
 [TTGO datasheet]: https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf
