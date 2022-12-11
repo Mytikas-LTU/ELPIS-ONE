@@ -45,7 +45,3 @@ int gen_dummy_data(telemetry *telemetry, float i, int current_state);
  **/
 int state_of_flight(telemetry *telemetry, int previous_state);
 #endif
-
-/*
-  push/pull TEST TEST TEST BRUH
-*/
