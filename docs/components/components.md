@@ -22,7 +22,6 @@
 | IMU             | [LSM6DSO32]              | [Datasheet][LSM6DSO32 datasheet] |                                              | :heavy_check_mark:       |
 | Barometer       | [BMP280]                 | [Datasheet][BMP280 datasheet]    |                                              | :heavy_check_mark:       |
 | Accelerometer   | [MPU6050]                | [Datasheet][MPU6050 datasheet]   |                                              | :heavy_check_mark:       |
-| Flashminne      | [23LC1024]               | [Datasheet][23LC1024 datasheet]  | |                                            |                          |
 
 
 [LilyGo TTGO LoRa32]: http://www.lilygo.cn/prod_view.aspx?TypeId=50060&Id=1326&FId=t3:50060:3
