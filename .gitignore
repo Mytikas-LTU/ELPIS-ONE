@@ -1,1 +1,2 @@
-code/.pio/**
+# ignore files automatically created by platformio
+code/.pio/
