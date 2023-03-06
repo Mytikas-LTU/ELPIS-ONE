@@ -65,9 +65,12 @@ void errorPrint() {
 }
 //------------------------------------------------------------------------------
 void setup() {
-//    char filename = "test.txt";
+    FatFile file;
+    char filename[10] = "test.txt";
+    char data[100] = "lorem ipsum dolor sit amet";
     Serial.begin(9600);
     // Wait for USB Serial
+    delay(2000);
     while (!Serial) {
         yield();
     }
@@ -80,7 +83,21 @@ void setup() {
     }
     Serial.println("Communication with the card works!");
     // write a single file to the sd-card
-    
+    Serial.println("Opening file");
+    if (!file.open(filename, O_RDWR | O_CREAT | O_APPEND)) {
+        Serial.println("something fucky wucky with opening the file");
+    }
+    Serial.println("Trying to write");
+    if (!file.write(data)) {
+        Serial.println("something fucky wucky with writing");
+    }
+    Serial.println("syncing");
+    file.sync();
+    Serial.println("closing the file");
+    if (!file.close()) {
+        Serial.println("something fucky wucky with closing the file?");
+    }
+    Serial.println("ending the communication with the card");
     sd.end();
 }
 //------------------------------------------------------------------------------
