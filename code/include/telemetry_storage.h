@@ -5,20 +5,20 @@
 #include "SdFat.h"
 #include "sdios.h"
 
-struct telemetryStorage
+typedef struct telemetryStorage
 {
     char *buffer;
     int ptr;
     int bufferSize;
     FatFile file;
-};
+} telemetryStorage;
 
 /*
     Initialize communication with the SD-card
     [ in ] cs: the pin that ChipSelect is connected to.
     returns: a telemetryStorage struct, to be passed to telemetry_storage_write(), and -1 on failure
 */
-telemetryStorage telemetry_storage_init(int cs);
+int telemetry_storage_init(int cs, telemetryStorage *telemetryStorage);
 
 /*
     Write data to the SD-card
@@ -26,7 +26,7 @@ telemetryStorage telemetry_storage_init(int cs);
     [ in ] telemetry: the telemetryStorage from _init()
     returns: the number of bytes written to the card, and -1 on failure
 */
-int telemetry_storage_write(telemetryStorage *telemetry, char data);
+int telemetry_storage_write(telemetryStorage *telemetry, char *data);
 
 /*
     Force a sync to the SD-card
