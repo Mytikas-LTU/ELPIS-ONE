@@ -10,15 +10,26 @@
 
 
 void setup() {
-    telemetryStorage *stor;
+    struct telemetryStorage *stor = new telemetryStorage();
     char toWrite[4] = "foo";
+    char *buffer;
+    int retVal;
 
     Serial.begin(9600);
     delay(2000);
+    while (!Serial) {
+        yield();
+    }
+    Serial.print("trying malloc...");
+    delay(500);
+    stor->bufferSize = 512;
+    delay(500);
     Serial.print("trying init...");
-    stor = telemetry_storage_init(15);
-    if (stor == NULL) {
+    delay(500);
+    retVal = telemetry_storage_init(15, stor);
+    if (retVal != 1) {
         Serial.print("init is fucked ");
+        Serial.print(retVal);
         return;
     }
     Serial.print("trying write...");
