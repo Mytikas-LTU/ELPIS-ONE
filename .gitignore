@@ -1,2 +1,4 @@
 # ignore files automatically created by platformio
 code/.pio/
+# ignore swap files made by nano
+*.swp
