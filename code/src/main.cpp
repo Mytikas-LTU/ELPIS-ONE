@@ -11,6 +11,7 @@
 #include <Adafruit_BMP280.h>
 #include "SdFat.h"
 #include "sdios.h"
+#include <MPU6050_light.h>
 
 #define BMP_SCK  (13)
 #define BMP_MISO (12)
@@ -20,6 +21,7 @@
 Adafruit_BMP280 bmp; // I2C
 //Adafruit_BMP280 bmp(BMP_CS); // hardware SPI
 //Adafruit_BMP280 bmp(BMP_CS, BMP_MOSI, BMP_MISO,  BMP_SCK);
+MPU6050 mpu(Wire);
 
 const int8_t DISABLE_CS_PIN = -1; //needed according to examples
 
@@ -29,9 +31,9 @@ const uint8_t LED_PIN = 2; // Define the LED-pin
 
 const int flashTime = 100; // time of a flash of the status LED, in millis
 const int pressureSamples = 10; // do better
-const int sampleRate = 10; // samlpes per second
+const int sampleRate = 100; // samlpes per second
 
-#define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(4))
+#define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(10))
 
 SdFs sd;
 FatFile file;
@@ -40,8 +42,9 @@ float oldalt;
 float basePressure;
 static ArduinoOutStream cout(Serial);
 char buffer[8192];
+float floatBuffer[2048];
 int ptr=0;
-
+long lastLoop;
 
 void errorPrint() {
     if (sd.sdErrorCode()) {
@@ -73,14 +76,28 @@ void setup() {
     while (!Serial) {
         yield();
     }
-
+    Wire.begin(4,5);
     Serial.println("Flash");
     flash(3);
     analogWrite(LED_PIN,128);
+    delay(flashTime*3);
+
+    Serial.println("Init MPU5060!");
+    //Wire.begin(0,5);
+    while(!mpu.begin()) {
+        Serial.println("MPU error");
+    }
+    delay(1000);
+    mpu.calcGyroOffsets();
+    mpu.calcAccOffsets();
+
+    mpu.setGyroConfig(3);
+    mpu.setAccConfig(3);
 
     Serial.println("Initializing BMP280");
     flash(1);
     analogWrite(LED_PIN,128);
+    delay(flashTime*3);
     unsigned status;
     //status = bmp.begin(BMP280_ADDRESS_ALT, BMP280_CHIPID);
     status = bmp.begin();
@@ -110,6 +127,7 @@ void setup() {
     Serial.println(F("Initializing SD-card"));
     flash(2);
     analogWrite(LED_PIN,128);
+    delay(flashTime*3);
     while (!sd.begin(SD_CONFIG)) {
         errorPrint();
         flash(2);
@@ -121,6 +139,7 @@ void setup() {
     Serial.println("Opening file");
     flash(3);
     analogWrite(LED_PIN,128);
+    delay(flashTime*3);
     if (!file.open(filename, O_RDWR | O_CREAT | O_APPEND)) {
         Serial.println("Failure to open file");
         while (1) {
@@ -131,6 +150,7 @@ void setup() {
 
     }
     Serial.println("File open!");
+
     Serial.print("Calibrating pressure at ground level");
     for(int i=0; i<pressureSamples; i++) {
         Serial.print(".");
@@ -146,8 +166,8 @@ void setup() {
     Serial.print(basePressure);
     Serial.println(" hPa");
     //remove below
-    file.close();
-    sd.end();
+//    file.close();
+//    sd.end();
 
     file.write(&pre1, 14);
     itoa(sampleRate, buf, 10);
@@ -167,47 +187,36 @@ void loop() {
           alt,
           pres;
 
+    mpu.update();
+    float xacc = mpu.getAccX();
+    float yacc = mpu.getAccY();
+    float zacc = mpu.getAccZ();
+
     //Gather data
     temp = bmp.readTemperature();
     pres = bmp.readPressure();
     alt = bmp.readAltitude(basePressure);
+    delay(5);
 
     //a drop of 1.2 kPa is equal to 100 m altitude
 
     dtostrf(pres, 9, 2, buf);
 
     // write data to card
-    memcpy(&buffer[ptr], &buf, 9);
-    ptr += 10;
-    buffer[ptr-1] = '\n';
+    memcpy(&floatBuffer[ptr], &pres, 4);
+    ptr += 1;
+//    floatBuffer[ptr] = pres;
+//    buffer[ptr-1] = '\n';
     if(ptr >= 800) {
         digitalWrite(LED_PIN,HIGH);
-//        file.write(&buffer, ptr);
-//        file.sync();
+        file.write(&floatBuffer, ptr);
+        file.sync();
         delay(100);
         Serial.println("Written to file!");
         ptr = 0;
         digitalWrite(LED_PIN,LOW);
     }
 /*
-    Serial.print(F("Temperature = "));
-    Serial.print(temp);
-    Serial.println(" *C");
-
-
-    Serial.print(F("Pressure = "));
-    Serial.print(buf);
-    Serial.println(" Pa");
-
-    Serial.print(F("Approx altitude = "));
-    Serial.print(alt);
-    Serial.println(" m");
-
-    Serial.print(F("Vertical speed = "));
-    Serial.print(alt-oldalt);
-    Serial.println(" m/s");
-*/
-
     Serial.print(temp);
     Serial.print(" *C, ");
 
@@ -220,9 +229,20 @@ void loop() {
 
     Serial.print(alt-oldalt);
     Serial.print(" m/s, ");
+*/
+    Serial.print(xacc);
+    Serial.print(" m/s^2 ");
+
+    Serial.print(yacc);
+    Serial.print(" m/s^2 ");
+
+    Serial.print(zacc);
+    Serial.print(" m/s^2 ");
 
     oldalt = alt;
 
     Serial.println();
-    delay(1000/sampleRate);
+//    delay(1000/sampleRate);
+    while(millis()-lastLoop < 1000/sampleRate) {}
+    lastLoop = millis();
 }
