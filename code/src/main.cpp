@@ -11,17 +11,21 @@
 #include <Adafruit_BMP280.h>
 #include "SdFat.h"
 #include "sdios.h"
-#include <MPU6050_light.h>
+//#include <MPU6050_light.h>
+#include <Adafruit_BNO08x.h>
 
 #define BMP_SCK  (13)
 #define BMP_MISO (12)
 #define BMP_MOSI (11)
 #define BMP_CS   (10)
 
+#define BNO08X_RESET -1
+
 Adafruit_BMP280 bmp; // I2C
 //Adafruit_BMP280 bmp(BMP_CS); // hardware SPI
 //Adafruit_BMP280 bmp(BMP_CS, BMP_MOSI, BMP_MISO,  BMP_SCK);
-MPU6050 mpu(Wire);
+//MPU6050 mpu(Wire);
+Adafruit_BNO08x bno08x(BNO08X_RESET);
 
 const int8_t DISABLE_CS_PIN = -1; //needed according to examples
 
@@ -32,6 +36,8 @@ const uint8_t LED_PIN = 2; // Define the LED-pin
 const int flashTime = 100; // time of a flash of the status LED, in millis
 const int pressureSamples = 10; // do better
 const int sampleRate = 100; // samlpes per second
+
+sh2_SensorValue_t sensorValue; //contains the sensor data for bno085
 
 #define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(10))
 
@@ -64,6 +70,29 @@ void flash(int times) {
     }
 }
 
+//sets all the sensor outputs to recieve
+//for more information on the sh2 sensorValues refer to the sh2 reference manual(downloaded in docs folder)
+bool SetReports() {
+    if(!bno08x.enableReport(SH2_ROTATION_VECTOR)) {
+        Serial.println("Could not enable rotation vector reports!");
+        return false;
+    }
+    if(!bno08x.enableReport(SH2_ACCELEROMETER)) {
+        Serial.println("Could not enable accelerometer reports!");
+        return false;
+    }
+    if(!bno08x.enableReport(SH2_GRAVITY)) {
+        Serial.println("Could not enable gravity reports!");
+        return false;
+    }
+    return true;
+}
+
+//handles potential errors when setting BNO reports, currenlty unused
+void BNOError(){
+    //maybye flash the light to indicate errors?   
+}
+
 void setup() {
     float pressures = 0;
     char pre1[] = "Sample rate: ";
@@ -82,17 +111,19 @@ void setup() {
     analogWrite(LED_PIN,128);
     delay(flashTime*3);
 
-    Serial.println("Init MPU5060!");
+    Serial.println("Init BNO085!");
     //Wire.begin(0,5);
-    while(!mpu.begin()) {
-        Serial.println("MPU error");
+    while(!bno08x.begin_I2C()) {
+        Serial.println("BNO error");
+    }
+
+    //check whether all the reports could be found, otherwise prevent the rest of code from runnning
+    if(!SetReports()) {
+        while(true) {
+            delay(1000);
+        }
     }
     delay(1000);
-    mpu.calcGyroOffsets();
-    mpu.calcAccOffsets();
-
-    mpu.setGyroConfig(3);
-    mpu.setAccConfig(3);
 
     Serial.println("Initializing BMP280");
     flash(1);
@@ -187,10 +218,31 @@ void loop() {
           alt,
           pres;
 
-    mpu.update();
-    float xacc = mpu.getAccX();
-    float yacc = mpu.getAccY();
-    float zacc = mpu.getAccZ();
+    sh2_Accelerometer_t acc, grav;
+    sh2_RotationVectorWAcc_t rotVec;
+
+    if(bno08x.wasReset()) {
+        Serial.println("BNO085 was reset");
+        SetReports();
+    }
+
+    //get the BNO085 sensor data
+    if(!bno08x.getSensorEvent(&sensorValue)){
+        Serial.println("Could not get Sensor Values!");
+        return;
+    }
+
+    //read the sensor data
+    switch(sensorValue.sensorId) {
+        case SH2_ACCELEROMETER:
+            acc=sensorValue.un.accelerometer;
+            break;
+        case SH2_ROTATION_VECTOR:
+            rotVec = sensorValue.un.rotationVector;
+            break;
+        case SH2_GRAVITY:
+            grav = sensorValue.un.gravity;
+    }
 
     //Gather data
     temp = bmp.readTemperature();
@@ -230,14 +282,28 @@ void loop() {
     Serial.print(alt-oldalt);
     Serial.print(" m/s, ");
 */
-    Serial.print(xacc);
-    Serial.print(" m/s^2 ");
+    Serial.print("Acceleration vector: X: ");
+    Serial.print(acc.x);
+    Serial.print(", y: ");
+    Serial.print(acc.y);
+    Serial.print(", z: ");
+    Serial.println(acc.z);
 
-    Serial.print(yacc);
-    Serial.print(" m/s^2 ");
+    Serial.print("Gravity vector: X: ");
+    Serial.print(grav.x);
+    Serial.print(", Y: ");
+    Serial.print(grav.y);
+    Serial.print(", Z: ");
+    Serial.println(grav.z);
 
-    Serial.print(zacc);
-    Serial.print(" m/s^2 ");
+    Serial.print("Rotation vector: r: ");
+    Serial.print(rotVec.real);
+    Serial.print(", i: ");
+    Serial.print(rotVec.i);
+    Serial.print(", j: ");
+    Serial.print(rotVec.j);
+    Serial.print(", k: ");
+    Serial.println(rotVec.k);
 
     oldalt = alt;
 
