@@ -1,10 +1,16 @@
 /***************************************************************************
     Author: Auri Åhs
     Simple telemetry using only a barometer
+    Testing is underway with integrating the accelerometer
     REMEMBER TO ENABLE WRITING TO THE SD-CARD BEFORE LAUNCH
  ***************************************************************************/
 // Plug in SCK ==> GPIO5 (D1)
 // Plug in SDA ==> GPIO4 (D2)
+
+#define ENABLE_BAROMETER 1
+#define ENABLE_ACCELEROMETER 1
+#define ENABLE_CARDWRITER 0
+#define ENABLE_LOGGING 0
 
 #include <Wire.h>
 #include <SPI.h>
@@ -35,7 +41,7 @@ const uint8_t LED_PIN = 2; // Define the LED-pin
 
 const int flashTime = 100; // time of a flash of the status LED, in millis
 const int pressureSamples = 10; // do better
-const int sampleRate = 100; // samlpes per second
+const int sampleRate = 10; // samlpes per second
 
 sh2_SensorValue_t sensorValue; //contains the sensor data for bno085
 
@@ -111,6 +117,21 @@ void setup() {
     analogWrite(LED_PIN,128);
     delay(flashTime*3);
 
+<<<<<<< HEAD
+#if ENABLE_ACCELEROMETER
+    Serial.println("Init MPU5060!");
+    byte mstatus = mpu.begin();
+    Serial.print(F("MPU6050 status: "));
+    Serial.println(mstatus);
+    while(mstatus!=0){ } // stop everything if could not connect to MPU6050
+
+    Serial.println(F("Calculating offsets, do not move MPU6050"));
+    delay(1000);
+    mpu.calcOffsets(true,true);
+#else
+    Serial.println("MPU5060 Disabled");
+#endif
+=======
     Serial.println("Init BNO085!");
     //Wire.begin(0,5);
     while(!bno08x.begin_I2C()) {
@@ -124,14 +145,16 @@ void setup() {
         }
     }
     delay(1000);
+>>>>>>> d5d6015fe2c8897ce236c979b97e9767dbd33ceb
 
+#if ENABLE_BAROMETER
     Serial.println("Initializing BMP280");
     flash(1);
     analogWrite(LED_PIN,128);
     delay(flashTime*3);
     unsigned status;
-    //status = bmp.begin(BMP280_ADDRESS_ALT, BMP280_CHIPID);
     status = bmp.begin();
+    status = 1;
     if (!status) {
         Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
                       "try a different address!"));
@@ -143,10 +166,10 @@ void setup() {
         while (1) {
             flash(1);
             digitalWrite(LED_PIN,HIGH);
+
             delay(flashTime*3);
         }
       }
-
     /* Default settings from datasheet. */
     bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
                     Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
@@ -154,7 +177,11 @@ void setup() {
                     Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                     Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
     Serial.println(F("BMP280 initialized!"));
+#else
+    Serial.println("BMP280 Disabled");
+#endif
 
+#if ENABLE_CARDWRITER
     Serial.println(F("Initializing SD-card"));
     flash(2);
     analogWrite(LED_PIN,128);
@@ -181,6 +208,9 @@ void setup() {
 
     }
     Serial.println("File open!");
+#else
+    Serial.println("Card writer disabled");
+#endif
 
     Serial.print("Calibrating pressure at ground level");
     for(int i=0; i<pressureSamples; i++) {
@@ -196,10 +226,8 @@ void setup() {
     Serial.print("Calibrated at ");
     Serial.print(basePressure);
     Serial.println(" hPa");
-    //remove below
-//    file.close();
-//    sd.end();
 
+#if ENABLE_LOGGING
     file.write(&pre1, 14);
     itoa(sampleRate, buf, 10);
     file.write(&buf, 4);
@@ -210,6 +238,11 @@ void setup() {
     file.sync();
     flash(4);
     digitalWrite(LED_PIN,LOW);
+#else
+    Serial.println("Logging disabled, closing file");
+    file.close();
+    sd.end();
+#endif
 }
 
 void loop() {
@@ -218,6 +251,11 @@ void loop() {
           alt,
           pres;
 
+<<<<<<< HEAD
+    mpu.update();
+
+    delay(5);
+=======
     sh2_Accelerometer_t acc, grav;
     sh2_RotationVectorWAcc_t rotVec;
 
@@ -243,12 +281,13 @@ void loop() {
         case SH2_GRAVITY:
             grav = sensorValue.un.gravity;
     }
+>>>>>>> d5d6015fe2c8897ce236c979b97e9767dbd33ceb
 
     //Gather data
     temp = bmp.readTemperature();
     pres = bmp.readPressure();
     alt = bmp.readAltitude(basePressure);
-    delay(5);
+
 
     //a drop of 1.2 kPa is equal to 100 m altitude
 
@@ -257,18 +296,19 @@ void loop() {
     // write data to card
     memcpy(&floatBuffer[ptr], &pres, 4);
     ptr += 1;
-//    floatBuffer[ptr] = pres;
-//    buffer[ptr-1] = '\n';
     if(ptr >= 800) {
         digitalWrite(LED_PIN,HIGH);
+#if ENABLE_LOGGING
         file.write(&floatBuffer, ptr);
         file.sync();
-        delay(100);
         Serial.println("Written to file!");
+#else
+        Serial.println("(simulated) Written to file!");
+#endif
         ptr = 0;
         digitalWrite(LED_PIN,LOW);
     }
-/*
+
     Serial.print(temp);
     Serial.print(" *C, ");
 
@@ -281,6 +321,15 @@ void loop() {
 
     Serial.print(alt-oldalt);
     Serial.print(" m/s, ");
+<<<<<<< HEAD
+
+    float xacc = mpu.getAccX();
+    float yacc = mpu.getAccY();
+    float zacc = mpu.getAccZ();
+
+    Serial.print(xacc);
+    Serial.print(" m/s^2 ");
+=======
 */
     Serial.print("Acceleration vector: X: ");
     Serial.print(acc.x);
@@ -288,6 +337,7 @@ void loop() {
     Serial.print(acc.y);
     Serial.print(", z: ");
     Serial.println(acc.z);
+>>>>>>> d5d6015fe2c8897ce236c979b97e9767dbd33ceb
 
     Serial.print("Gravity vector: X: ");
     Serial.print(grav.x);
@@ -308,7 +358,8 @@ void loop() {
     oldalt = alt;
 
     Serial.println();
-//    delay(1000/sampleRate);
+
+    // constant time loop
     while(millis()-lastLoop < 1000/sampleRate) {}
     lastLoop = millis();
 }
