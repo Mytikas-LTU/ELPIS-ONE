@@ -9,15 +9,16 @@
 
 #define ENABLE_BAROMETER 1
 #define ENABLE_ACCELEROMETER 1
-#define ENABLE_CARDWRITER 0
-#define ENABLE_LOGGING 0
+#define ENABLE_CARDWRITER 1
+#define ENABLE_LOGGING 1
 
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_BMP280.h>
-#include "SdFat.h"
-#include "sdios.h"
+//#include "SdFat.h"
+//#include "sdios.h"
 //#include <MPU6050_light.h>
+#include <SD.h>
 #include <Adafruit_BNO08x.h>
 
 #define BMP_SCK  (13)
@@ -43,28 +44,64 @@ const int flashTime = 100; // time of a flash of the status LED, in millis
 const int pressureSamples = 10; // do better
 const int sampleRate = 10; // samlpes per second
 
+const int chipSelect = SS1;
+
 sh2_SensorValue_t sensorValue; //contains the sensor data for bno085
 
-#define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(10))
+//#define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(10))
+#ifdef FAST_MODE
+  // Top frequency is reported to be 1000Hz (but freq is somewhat variable)
+  sh2_SensorId_t reportType = SH2_GYRO_INTEGRATED_RV;
+  long reportIntervalUs = 2000;
+#else
+  // Top frequency is about 250Hz but this report is more accurate
+  sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
+  long reportIntervalUs = 5000;
+#endif
 
-SdFs sd;
-FatFile file;
+struct rot_acc {
+    float xr;
+    float yr;
+    float zr;
+} vec;
+
+
 char filename[10] = "tele.txt";
 float oldalt;
 float basePressure;
-static ArduinoOutStream cout(Serial);
 char buffer[8192];
 float floatBuffer[2048];
 int ptr=0;
 long lastLoop;
+File file;
 
-void errorPrint() {
-    if (sd.sdErrorCode()) {
-        cout << F("SD errorCode: ") << hex << showbase;
-        printSdErrorSymbol(&Serial, sd.sdErrorCode());
-        cout << F(" = ") << int(sd.sdErrorCode()) << endl;
-        cout << F("SD errorData = ") << int(sd.sdErrorData()) << dec << endl;
-    }
+void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y, float z){
+  
+    float s = pow(-2,(sqrt((i*i)+(j*j)+(k*k)+(r*r))));
+
+    float r11 = 1-2*s*((j*j)+(k*k));
+    float r12 = 2*s*((i*i)*(j*j)-(k*k)*(r*r));
+    float r13 = 2*s*((i*i)*(k*k)+(j*j)*(r*r));
+
+    float r21 = 2*s*((i*i)*(j*j)+(k*k)*(r*r));
+    float r22 = 1-2*s*((i*i)+(k*k));
+    float r23 = 2*s*((j*j)*(k*k)-(i*i)*(r*r));
+
+    float r31 = 2*s*((i*i)*(k*k)-(j*j)*(r*r));
+    float r32 = 2*s*((j*j)*(k*k)+(i*i)*(r*r));
+    float r33 = 1-2*s*((i*i)+(j*j));
+
+    vec->xr=(r11*x+r12*y+r13*z);
+    vec->yr=(r21*x+r22*y+r23*z);
+    vec->zr=(r31*x+r32*y+r33*z);
+}
+
+void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, sh2_Accelerometer_t* accelerometer, rot_acc* vec) {
+    rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
+}
+
+void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, sh2_Accelerometer_t* accelerometer, rot_acc* vec) {
+    rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
 }
 
 void flash(int times) {
@@ -101,10 +138,6 @@ void BNOError(){
 
 void setup() {
     float pressures = 0;
-    char pre1[] = "Sample rate: ";
-    char pre2[] = "Base pressure: ";
-    char pre3[] = "\n";
-    char buf[10];
     pinMode(LED_PIN,OUTPUT);
     Serial.begin(9600);
     //delay(10000);   // wait for native usb
@@ -142,7 +175,6 @@ void setup() {
     delay(flashTime*3);
     unsigned status;
     status = bmp.begin();
-    status = 1;
     if (!status) {
         Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
                       "try a different address!"));
@@ -174,8 +206,8 @@ void setup() {
     flash(2);
     analogWrite(LED_PIN,128);
     delay(flashTime*3);
-    while (!sd.begin(SD_CONFIG)) {
-        errorPrint();
+    while (!SD.begin(chipSelect)) {
+        Serial.println("Failure to communicate with SD-card");
         flash(2);
         digitalWrite(LED_PIN,HIGH);
         delay(flashTime*3);
@@ -186,7 +218,9 @@ void setup() {
     flash(3);
     analogWrite(LED_PIN,128);
     delay(flashTime*3);
-    if (!file.open(filename, O_RDWR | O_CREAT | O_APPEND)) {
+    
+    file = SD.open(filename, O_RDWR | O_CREAT | O_APPEND);
+    if (!file) {
         Serial.println("Failure to open file");
         while (1) {
             flash(3);
@@ -216,20 +250,16 @@ void setup() {
     Serial.println(" hPa");
 
 #if ENABLE_LOGGING
-    file.write(&pre1, 14);
-    itoa(sampleRate, buf, 10);
-    file.write(&buf, 4);
-    file.write(&pre2, 16);
-    dtostrf(basePressure, 9, 2, buf);
-    file.write(&buf, 10);
-    file.write(&pre3, 2);
-    file.sync();
+    file.print("Sample rate: ");
+    file.print(sampleRate);
+    file.print(" Base pressure: ");
+    file.println(basePressure);
+    file.flush();
     flash(4);
     digitalWrite(LED_PIN,LOW);
 #else
     Serial.println("Logging disabled, closing file");
     file.close();
-    sd.end();
 #endif
 }
 
@@ -263,6 +293,13 @@ void loop() {
             break;
         case SH2_GRAVITY:
             grav = sensorValue.un.gravity;
+            break;
+        case SH2_ARVR_STABILIZED_RV:
+            quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &sensorValue.un.accelerometer, &vec);
+        case SH2_GYRO_INTEGRATED_RV:
+            // faster (more noise?)
+            quaternionToEulerGI(&sensorValue.un.gyroIntegratedRV, &sensorValue.un.accelerometer, &vec);
+            break;
     }
 
     //Gather data
@@ -274,13 +311,14 @@ void loop() {
     //a drop of 1.2 kPa is equal to 100 m altitude
 
     // write data to card
-    memcpy(&floatBuffer[ptr], &pres, 4);
+//    memcpy(&floatBuffer[ptr], &pres, 4);
     ptr += 1;
+    file.println(pres);
     if(ptr >= 800) {
         digitalWrite(LED_PIN,HIGH);
 #if ENABLE_LOGGING
-        file.write(&floatBuffer, ptr);
-        file.sync();
+//        file.write(&floatBuffer, (size_t)ptr);
+        file.flush();
         Serial.println("Written to file!");
 #else
         Serial.println("(simulated) Written to file!");
@@ -293,7 +331,7 @@ void loop() {
     Serial.print(" *C, ");
 
 
-    Serial.print(buf);
+    Serial.print(pres);
     Serial.print(" Pa, ");
 
     Serial.print(alt);
@@ -325,9 +363,19 @@ void loop() {
     Serial.print(", k: ");
     Serial.println(rotVec.k);
 
+
+    Serial.print("xr: ");
+    Serial.print(vec.xr);                        Serial.print("\t");
+    Serial.print("yr: ");
+    Serial.print(vec.yr);                        Serial.print("\t");
+    Serial.print("zr: ");
+    Serial.print(vec.zr);                        Serial.print("\t");
+
     oldalt = alt;
 
     Serial.println();
+
+
 
     // constant time loop
     while(millis()-lastLoop < 1000/sampleRate) {}
