@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "stage_recognition.h"
 
+
+
 // function that generates values for acc, vel and height to check against stage_recognition
 int gen_dummy_data(telemetry *telemetry, float i, int current_state)
 {
@@ -46,34 +48,58 @@ int gen_dummy_data(telemetry *telemetry, float i, int current_state)
   return 0;
 }
 
+int approx_direction(float *altitude_array /*Array of the last 50 altitude measurments*/){
+  float diff[50];
+  for ( i = 0; i < 50; i++)
+  {
+    diff[i] = altitude_array[0] - altitude_array[i];
+  }
+  float median = sum(diff)/50;
+
+  if (median < base_Presure * 1.005 && median > base_Presure * 0.995)
+  {
+    return flat; //3
+  }
+  else if (median > 0)
+  {
+    return upp; //1
+  }
+  else if (median < 0)
+  {
+    return down; //3
+  }
+   
+}
+
+float altitude[50]; //needed to initialize approx direction, will be pulled from measurments.
+int direction = approx_direction(altitude) //will be called before state_of_flight in execution order.
+
 // function that declares rockets stage in flight depending on the generated values and its previous stage
 int state_of_flight(telemetry *telemetry, int previous_state)
 {
-  if (previous_state == launch_pad && telemetry->acc <= 10 && !telemetry->parachute_state)
+  if (((previous_state == launch_pad) + (direction == 3) + (-1 < telemetry->acc && telemetry->acc < 1) + (!telemetry->parachute_state)) >= 3 )
     return launch_pad;
-  else if (previous_state == launch_pad && telemetry->acc > 10 && !telemetry->parachute_state)
+  else if (((previous_state == launch_pad) + (telemetry->acc > 10) + (!telemetry->parachute_state)) >= 2)
     return quick_ascent;
-  else if (previous_state == quick_ascent && telemetry->acc >= 0 && !telemetry->parachute_state)
+  else if (((previous_state == quick_ascent) +  (telemetry->acc >= 0) + (!telemetry->parachute_state)) >= 2 )
     return quick_ascent;
-  else if (previous_state == quick_ascent && telemetry->vel > 0 && telemetry->acc < 0 && !telemetry->parachute_state)
+  else if (((previous_state == quick_ascent) + (direction ==1 > 0) + t(elemetry->acc < 0) + (!telemetry->parachute_state)) >= 3)
     return slow_ascent;
-  else if (previous_state == slow_ascent && telemetry->vel > 0 && telemetry->acc < 0 && !telemetry->parachute_state)
+  else if (((previous_state == slow_ascent) +  (direction ==1) + (telemetry->acc < 0) +  (!telemetry->parachute_state)) >=3)
     return slow_ascent;
-  else if (previous_state == slow_ascent && (-1.5 < telemetry->vel && telemetry->vel < 1.5) && telemetry->acc < 0 && !telemetry->parachute_state)
-    return apogee;
-  else if (previous_state == apogee && telemetry->vel < 0 && telemetry->acc < 0 && !telemetry->parachute_state)
+  else if (((previous_state == slow_ascent) + (direction == 2) + (telemetry->acc < 0) + (!telemetry->parachute_state)) >= 3)
     return quick_descent;
-  else if (previous_state == quick_descent && telemetry->vel < 0 && telemetry->acc < 0 && !telemetry->parachute_state)
+  else if (((previous_state == quick_descent) + (direction == 2)  + (telemetry->acc < 0) + (!telemetry->parachute_state)) >=3)
     return quick_descent;
-  else if (previous_state == quick_descent && telemetry->vel < 0 && telemetry->acc < 0 && telemetry->parachute_state) // parachute released, quick_descent -> slow_descent
+  else if (((previous_state == quick_descent) + (direction == 2)  + (telemetry->acc < 0) + (telemetry->parachute_state)) >= 3) // parachute released, quick_descent -> slow_descent
+    // release parachute;
     return slow_descent;
-  else if (previous_state == slow_descent && telemetry->vel < 0 && telemetry->acc < 0 && telemetry->parachute_state)
+  else if (((previous_state == slow_descent)  + (direction == 2) + (telemetry->acc < 0) + (telemetry->parachute_state)) >= 3)
     return slow_descent;
-  else if (previous_state == slow_descent && (-1 < telemetry->vel && telemetry->vel < 1) && (-1 < telemetry->acc && telemetry->acc < 1) && telemetry->parachute_state)
+  else if (((previous_state == slow_descent) + (direction == 3) + (-1 < telemetry->acc && telemetry->acc < 1) + (telemetry->parachute_state)) >=3)
     return touch_down;
   else if (previous_state == touch_down)
     return touch_down;
-
   else
     return FALSE; // error
 }

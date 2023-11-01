@@ -14,12 +14,19 @@ enum STATE // Defines stages
   launch_pad = 1,
   quick_ascent = 2,
   slow_ascent = 3,
-  apogee = 4,
-  quick_descent = 5,
-  slow_descent = 6,
-  touch_down = 7,
+  quick_descent = 4,
+  slow_descent = 5,
+  touch_down = 6,
   FALSE = 0
 };
+
+enum Direction // Defines directions
+{
+  upp = 1
+  flat = 2
+  down = 3
+  FALSE = 0
+}
 
 struct telemetry
 {
