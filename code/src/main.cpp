@@ -117,21 +117,7 @@ void setup() {
     analogWrite(LED_PIN,128);
     delay(flashTime*3);
 
-<<<<<<< HEAD
 #if ENABLE_ACCELEROMETER
-    Serial.println("Init MPU5060!");
-    byte mstatus = mpu.begin();
-    Serial.print(F("MPU6050 status: "));
-    Serial.println(mstatus);
-    while(mstatus!=0){ } // stop everything if could not connect to MPU6050
-
-    Serial.println(F("Calculating offsets, do not move MPU6050"));
-    delay(1000);
-    mpu.calcOffsets(true,true);
-#else
-    Serial.println("MPU5060 Disabled");
-#endif
-=======
     Serial.println("Init BNO085!");
     //Wire.begin(0,5);
     while(!bno08x.begin_I2C()) {
@@ -145,7 +131,9 @@ void setup() {
         }
     }
     delay(1000);
->>>>>>> d5d6015fe2c8897ce236c979b97e9767dbd33ceb
+#else
+    Serial.println("BNO085 Disabled");
+#endif
 
 #if ENABLE_BAROMETER
     Serial.println("Initializing BMP280");
@@ -251,11 +239,6 @@ void loop() {
           alt,
           pres;
 
-<<<<<<< HEAD
-    mpu.update();
-
-    delay(5);
-=======
     sh2_Accelerometer_t acc, grav;
     sh2_RotationVectorWAcc_t rotVec;
 
@@ -281,7 +264,6 @@ void loop() {
         case SH2_GRAVITY:
             grav = sensorValue.un.gravity;
     }
->>>>>>> d5d6015fe2c8897ce236c979b97e9767dbd33ceb
 
     //Gather data
     temp = bmp.readTemperature();
@@ -290,8 +272,6 @@ void loop() {
 
 
     //a drop of 1.2 kPa is equal to 100 m altitude
-
-    dtostrf(pres, 9, 2, buf);
 
     // write data to card
     memcpy(&floatBuffer[ptr], &pres, 4);
@@ -321,23 +301,13 @@ void loop() {
 
     Serial.print(alt-oldalt);
     Serial.print(" m/s, ");
-<<<<<<< HEAD
 
-    float xacc = mpu.getAccX();
-    float yacc = mpu.getAccY();
-    float zacc = mpu.getAccZ();
-
-    Serial.print(xacc);
-    Serial.print(" m/s^2 ");
-=======
-*/
     Serial.print("Acceleration vector: X: ");
     Serial.print(acc.x);
     Serial.print(", y: ");
     Serial.print(acc.y);
     Serial.print(", z: ");
     Serial.println(acc.z);
->>>>>>> d5d6015fe2c8897ce236c979b97e9767dbd33ceb
 
     Serial.print("Gravity vector: X: ");
     Serial.print(grav.x);
