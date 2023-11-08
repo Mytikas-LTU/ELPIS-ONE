@@ -11,7 +11,7 @@
 #define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 1
 #define ENABLE_LOGGING 1
-#define ENABLE_SERVO 1
+#define ENABLE_SERVO 0
 
 #include <Wire.h>
 #include <SPI.h>
@@ -42,6 +42,10 @@ const int8_t DISABLE_CS_PIN = -1; //needed according to examples
 const uint8_t SD_CS_PIN = SS; // Define the ChipSelect-pin
 
 const uint8_t LED_PIN = 2; // Define the LED-pin
+const uint8_t ERROR_LED_PIN = 3; // Define the LED-pin
+const uint8_t LAUNCH_LED_PIN = 4; // Define the LED-pin
+const uint8_t CARD_LED_PIN = 5; // Define the LED-pin
+
 
 const int flashTime = 100; // time of a flash of the status LED, in millis
 const int pressureSamples = 10; // do better
@@ -145,15 +149,20 @@ void BNOError(){
 void setup() {
     float pressures = 0;
     pinMode(LED_PIN,OUTPUT);
+    pinMode(LAUNCH_LED_PIN,OUTPUT);
+    pinMode(ERROR_LED_PIN,OUTPUT);
+    pinMode(CARD_LED_PIN,OUTPUT);
+    digitalWrite(LAUNCH_LED_PIN,LOW);
+    digitalWrite(ERROR_LED_PIN,LOW);
     Serial.begin(9600);
     //delay(10000);   // wait for native usb
     while (!Serial) {
         yield();
     }
-    Wire.begin(4,5);
+//    Wire.begin(4,5);
     Serial.println("Flash");
     flash(3);
-    analogWrite(LED_PIN,128);
+    //analogWrite(LED_PIN,128);
     delay(flashTime*3);
 
 #if ENABLE_ACCELEROMETER
@@ -161,6 +170,7 @@ void setup() {
     //Wire.begin(0,5);
     while(!bno08x.begin_I2C()) {
         Serial.println("BNO error");
+        digitalWrite(ERROR_LED_PIN,HIGH);
     }
 
     //check whether all the reports could be found, otherwise prevent the rest of code from runnning
@@ -177,7 +187,7 @@ void setup() {
 #if ENABLE_BAROMETER
     Serial.println("Initializing BMP280");
     flash(1);
-    analogWrite(LED_PIN,128);
+    //analogWrite(LED_PIN,128);
     delay(flashTime*3);
     unsigned status;
     status = bmp.begin();
@@ -194,6 +204,7 @@ void setup() {
             digitalWrite(LED_PIN,HIGH);
 
             delay(flashTime*3);
+            digitalWrite(ERROR_LED_PIN,HIGH);
         }
       }
     /* Default settings from datasheet. */
@@ -210,9 +221,10 @@ void setup() {
 #if ENABLE_CARDWRITER
     Serial.println(F("Initializing SD-card"));
     flash(2);
-    analogWrite(LED_PIN,128);
+    //analogWrite(LED_PIN,128);
     delay(flashTime*3);
     while (!SD.begin(chipSelect)) {
+        digitalWrite(ERROR_LED_PIN,HIGH);
         Serial.println("Failure to communicate with SD-card");
         flash(2);
         digitalWrite(LED_PIN,HIGH);
@@ -222,13 +234,14 @@ void setup() {
 
     Serial.println("Opening file");
     flash(3);
-    analogWrite(LED_PIN,128);
+    //analogWrite(LED_PIN,128);
     delay(flashTime*3);
     
     file = SD.open(filename, O_RDWR | O_CREAT | O_APPEND);
     if (!file) {
         Serial.println("Failure to open file");
         while (1) {
+            digitalWrite(ERROR_LED_PIN,HIGH);
             flash(3);
             digitalWrite(LED_PIN,HIGH);
             delay(flashTime*3);
@@ -269,8 +282,10 @@ void setup() {
 #endif
 
 #if ENABLE_SERVO
+    Serial.println("enabling servo");    
     shuteServo.attach(9);
 #endif
+    digitalWrite(LAUNCH_LED_PIN,HIGH);
 }
 
 void loop() {
@@ -278,7 +293,8 @@ void loop() {
     float temp,
           alt,
           pres;
-
+    digitalWrite(LED_PIN,HIGH);
+    
     sh2_Accelerometer_t acc, grav;
     sh2_RotationVectorWAcc_t rotVec;
 
@@ -325,7 +341,7 @@ void loop() {
     ptr += 1;
     file.println(pres);
     if(ptr >= 800) {
-        digitalWrite(LED_PIN,HIGH);
+        digitalWrite(CARD_LED_PIN,HIGH);
 #if ENABLE_LOGGING
 //        file.write(&floatBuffer, (size_t)ptr);
         file.flush();
@@ -333,6 +349,9 @@ void loop() {
 #else
         Serial.println("(simulated) Written to file!");
 #endif
+        ptr = 0;
+        digitalWrite(CARD_LED_PIN,LOW);
+    }
 
 #if ENABLE_SERVO
     if(!rotated){ 
@@ -344,9 +363,6 @@ void loop() {
         rotated = false;    
     }
 #endif
-        ptr = 0;
-        digitalWrite(LED_PIN,LOW);
-    }
 
     Serial.print(temp);
     Serial.print(" *C, ");
@@ -399,6 +415,7 @@ void loop() {
 
 
     // constant time loop
+    digitalWrite(LED_PIN,LOW);
     while(millis()-lastLoop < 1000/sampleRate) {}
     lastLoop = millis();
 }
