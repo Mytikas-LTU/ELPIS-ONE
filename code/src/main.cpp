@@ -11,6 +11,7 @@
 #define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 1
 #define ENABLE_LOGGING 1
+#define ENABLE_SERVO 1
 
 #include <Wire.h>
 #include <SPI.h>
@@ -20,11 +21,13 @@
 //#include <MPU6050_light.h>
 #include <SD.h>
 #include <Adafruit_BNO08x.h>
+#include<Servo.h>
 
 #define BMP_SCK  (13)
 #define BMP_MISO (12)
 #define BMP_MOSI (11)
 #define BMP_CS   (10)
+#define SERVO_PIN (9)
 
 #define BNO08X_RESET -1
 
@@ -45,6 +48,8 @@ const int pressureSamples = 10; // do better
 const int sampleRate = 10; // samlpes per second
 
 const int chipSelect = SS1;
+
+Servo shuteServo;
 
 sh2_SensorValue_t sensorValue; //contains the sensor data for bno085
 
@@ -74,6 +79,7 @@ float floatBuffer[2048];
 int ptr=0;
 long lastLoop;
 File file;
+bool rotated = false;
 
 void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y, float z){
   
@@ -261,6 +267,10 @@ void setup() {
     Serial.println("Logging disabled, closing file");
     file.close();
 #endif
+
+#if ENABLE_SERVO
+    shuteServo.attach(9);
+#endif
 }
 
 void loop() {
@@ -322,6 +332,17 @@ void loop() {
         Serial.println("Written to file!");
 #else
         Serial.println("(simulated) Written to file!");
+#endif
+
+#if ENABLE_SERVO
+    if(!rotated){ 
+        shuteServo.write(90); 
+        rotated = true;
+    }
+    else { 
+        shuteServo.write(0); 
+        rotated = false;    
+    }
 #endif
         ptr = 0;
         digitalWrite(LED_PIN,LOW);
