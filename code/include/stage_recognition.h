@@ -30,10 +30,20 @@ enum Direction // Defines directions
 
 struct telemetry
 {
-  float acc;
-  float vel;
-  float height;
+  float accX;
+  float accY;
+  float accZ;
+  float acc_globZ;
+  int direction;
+  float alt;
   int parachute_state;
+  float temp;
+  float pres;
+  //float gravX;
+  //float gravY;
+  //float gravZ;
+  long time; 
+
 };
 
 /**
@@ -50,5 +60,5 @@ int gen_dummy_data(telemetry *telemetry, float i, int current_state);
  * previous state is the latest stage stage_of_flight declared
  * returns the rockets current stage in its flight
  **/
-int state_of_flight(telemetry *telemetry, int previous_state);
+int state_of_flight_func(telemetry *telemetry, int previous_state);
 #endif
