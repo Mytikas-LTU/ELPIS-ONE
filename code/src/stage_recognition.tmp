@@ -83,11 +83,11 @@ int approx_direction(float *presArr, float basePres ){
   {
     return flat; //2
   }
-  else if (median > 0)
+  else if (median < 0)
   {
     return upp; //1
   }
-  else if (median < 0)
+  else if (median > 0)
   {
     return down; //3
   }
@@ -132,9 +132,9 @@ int emergency_chute(telemetry *flight_data)
   if (flight_data->alt < 100 && flight_data->direction ==3 && !telemetry->parachute_state )
   {
     telemetry->parachute_state = 1; 
-    /* realese chute */
+    /* release chute */
   }
-  else if(flight_data->alt < 0 && !telemetry->parachute_state && (state_of_flight == launch_pad || flight_data->alt < -20))
+  else if(flight_data->alt < 0 && !telemetry->parachute_state && (state_of_flight == launch_pad || flight_data->alt < -2))
   {
     telemetry->parachute_state = 1; 
     /*release chute*/
