@@ -22,6 +22,8 @@
 #include <SD.h>
 #include <Adafruit_BNO08x.h>
 #include<Servo.h>
+#include "stage_recognition.h"
+
 
 #define BMP_SCK  (13)
 #define BMP_MISO (12)
@@ -84,6 +86,13 @@ int ptr=0;
 long lastLoop;
 File file;
 bool rotated = false;
+
+// Initialisation of stage_recognition
+int alt_index; = 0; 
+float presArr[50]; 
+int state_of_flight = 1;
+int prevStage = 1;
+struct telemetry flight_data;
 
 void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y, float z){
   
@@ -337,6 +346,15 @@ void loop() {
     //a drop of 1.2 kPa is equal to 100 m altitude
 
     // write data to card
+    
+  alt_index++;
+  presArr[alt_index%50] = telemetry->pres;
+  if (alt_index >=50)
+  {
+    telemetry->direction = approx_direction(&presArr) //will be called before state_of_flight in execution order.
+    state_of_flight = state_of_flight_func(&flight_data, prevStage)
+  }
+  emergency_chute()
 //    memcpy(&floatBuffer[ptr], &pres, 4);
     ptr += 1;
     file.println(pres);
@@ -354,9 +372,9 @@ void loop() {
     }
 
 #if ENABLE_SERVO
-    if(!rotated){ 
+    if(telemetry.parachute_state == 1){ 
         shuteServo.write(90); 
-        rotated = true;
+        
     }
     else { 
         shuteServo.write(0); 

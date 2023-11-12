@@ -50,24 +50,6 @@ int gen_dummy_data(telemetry *telemetry, float i, int current_state)
 }
 #endif
 
-void main()
-{
-  int alt_index; = 0; 
-  float presArr[50]; 
-  int state_of_flight = 1;
-  int prevStage = 1;
-  struct telemetry flight_data;
-  //outside main loop
-
-  alt_index++;
-  presArr[alt_index%50] = telemetry->pres;
-  //needed to initialize approx direction, will be pulled from measurments.
-  if (alt_index >=50)
-  {
-    telemetry->direction = approx_direction(&presArr) //will be called before state_of_flight in execution order.
-    state_of_flight = state_of_flight_func(&flight_data, prevStage)
-  }
-}
 
 int approx_direction(float *presArr, float basePres ){
   float diff[50];
@@ -127,24 +109,25 @@ int state_of_flight_func(telemetry *flight_data, int previous_state)
     return FALSE; // error
 }
 
-int emergency_chute(telemetry *flight_data)
+void emergency_chute(telemetry *flight_data)
 {
   if (flight_data->alt < 100 && flight_data->direction ==3 && !telemetry->parachute_state )
   {
     telemetry->parachute_state = 1; 
-    /* release chute */
+    //release parachute
   }
   else if(flight_data->alt < 0 && !telemetry->parachute_state && (state_of_flight == launch_pad || flight_data->alt < -2))
   {
     telemetry->parachute_state = 1; 
-    /*release chute*/
+    //release parachute
   }
 }
 
+/*
 int chute_check(telemetry *flight_data){
-/*Work in progress*/
+Work in progress
 }
-
+*/
 
 
 
