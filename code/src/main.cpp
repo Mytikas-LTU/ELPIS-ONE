@@ -7,11 +7,11 @@
 // Plug in SCK ==> GPIO5 (D1)
 // Plug in SDA ==> GPIO4 (D2)
 
-#define ENABLE_BAROMETER 1
-#define ENABLE_ACCELEROMETER 1
+#define ENABLE_BAROMETER 0
+#define ENABLE_ACCELEROMETER 0
 #define ENABLE_CARDWRITER 1
 #define ENABLE_LOGGING 1
-#define ENABLE_SERVO 0
+#define ENABLE_SERVO 1
 
 #include <Wire.h>
 #include <SPI.h>
@@ -88,7 +88,7 @@ File file;
 bool rotated = false;
 
 // Initialisation of stage_recognition
-int alt_index; = 0; 
+int alt_index = 0; 
 float presArr[50]; 
 int state_of_flight = 1;
 int prevStage = 1;
@@ -262,6 +262,7 @@ void setup() {
     Serial.println("Card writer disabled");
 #endif
 
+#if ENABLE_BAROMETER
     Serial.print("Calibrating pressure at ground level");
     for(int i=0; i<pressureSamples; i++) {
         Serial.print(".");
@@ -276,6 +277,9 @@ void setup() {
     Serial.print("Calibrated at ");
     Serial.print(basePressure);
     Serial.println(" hPa");
+#else
+    Serial.println("Pressure calibration disabled");
+#endif
 
 #if ENABLE_LOGGING
     file.print("Sample rate: ");
@@ -291,13 +295,24 @@ void setup() {
 #endif
 
 #if ENABLE_SERVO
-    Serial.println("enabling servo");    
+    Serial.println("enabling servo");
     shuteServo.attach(9);
+    shuteServo.write(180);
+    Serial.println("servo 180");
+
+    delay(5000);
+    shuteServo.write(90);
+    Serial.println("servo locked");
+    delay(5000);
+    shuteServo.write(180);
+    Serial.println("servo deployed");
+
 #endif
     digitalWrite(LAUNCH_LED_PIN,HIGH);
 }
 
 void loop() {
+/*
     char buf[10];
     float temp,
           alt,
@@ -338,23 +353,24 @@ void loop() {
     }
 
     //Gather data
+#if ENABLE_BAROMETER
     temp = bmp.readTemperature();
     pres = bmp.readPressure();
     alt = bmp.readAltitude(basePressure);
-
+#endif
 
     //a drop of 1.2 kPa is equal to 100 m altitude
 
     // write data to card
     
   alt_index++;
-  presArr[alt_index%50] = telemetry->pres;
+  presArr[alt_index%50] = flight_data.pres;
   if (alt_index >=50)
   {
-    telemetry->direction = approx_direction(&presArr) //will be called before state_of_flight in execution order.
-    state_of_flight = state_of_flight_func(&flight_data, prevStage)
+//    flight_data.direction = approx_direction(&presArr) //will be called before state_of_flight in execution order.
+//    state_of_flight = state_of_flight_func(&flight_data, prevStage)
   }
-  emergency_chute()
+  emergency_chute(&flight_data);
 //    memcpy(&floatBuffer[ptr], &pres, 4);
     ptr += 1;
     file.println(pres);
@@ -372,7 +388,7 @@ void loop() {
     }
 
 #if ENABLE_SERVO
-    if(telemetry.parachute_state == 1){ 
+    if(flight_data.parachute_state == 1 || alt_index >= 50){ 
         shuteServo.write(90); 
         
     }
@@ -431,8 +447,9 @@ void loop() {
     Serial.println();
 
 
-
+*/
     // constant time loop
+    Serial.println("loop disabled");
     digitalWrite(LED_PIN,LOW);
     while(millis()-lastLoop < 1000/sampleRate) {}
     lastLoop = millis();

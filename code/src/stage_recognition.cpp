@@ -4,7 +4,7 @@
 
 
 // function that generates values for acc, vel and height to check against stage_recognition
-#if Enable_DummyData
+/*#if Enable_DummyData
 int gen_dummy_data(telemetry *telemetry, float i, int current_state)
 {
   float dt = 0.001; // number of time-unit a loop represents
@@ -49,8 +49,8 @@ int gen_dummy_data(telemetry *telemetry, float i, int current_state)
   return 0;
 }
 #endif
-
-
+*/
+/*
 int approx_direction(float *presArr, float basePres ){
   float diff[50];
   float sum = 0;
@@ -75,52 +75,56 @@ int approx_direction(float *presArr, float basePres ){
   }
    
 }
+*/
+
 // function that declares rockets stage in flight depending on the generated values and its previous stage
+/*
 int state_of_flight_func(telemetry *flight_data, int previous_state)
 {
-  if (((previous_state == launch_pad) + (direction == 3) + (-1 < telemetry->acc_globZ && telemetry->acc_globZ < 1) + (!telemetry->parachute_state)) >= 3 )
+  if (((previous_state == launch_pad) + (direction == 3) + (-1 < flight_data->acc_globZ && flight_data->acc_globZ < 1) + (!flight_data->parachute_state)) >= 3 )
     return launch_pad;
-  else if (((previous_state == launch_pad) + (telemetry->acc_globZ > 10) + (!telemetry->parachute_state)) >= 2)
+  else if (((previous_state == launch_pad) + (flight_data->acc_globZ > 10) + (!flight_data->parachute_state)) >= 2)
     return quick_ascent;
-  else if (((previous_state == quick_ascent) +  (telemetry->acc_globZ >= 0) + (!telemetry->parachute_state)) >= 2 )
+  else if (((previous_state == quick_ascent) +  (flight_data->acc_globZ >= 0) + (!flight_data->parachute_state)) >= 2 )
     return quick_ascent;
-  else if (((previous_state == quick_ascent) + (direction ==1 > 0) + t(elemetry->acc_globZ < 0) + (!telemetry->parachute_state)) >= 3)
+  else if (((previous_state == quick_ascent) + (direction ==1 > 0) + t(elemetry->acc_globZ < 0) + (!flight_data->parachute_state)) >= 3)
     return slow_ascent;
-  else if (((previous_state == slow_ascent) +  (direction ==1) + (telemetry->acc_globZ < 0) +  (!telemetry->parachute_state)) >=3)
+  else if (((previous_state == slow_ascent) +  (direction ==1) + (flight_data->acc_globZ < 0) +  (!flight_data->parachute_state)) >=3)
     return slow_ascent;
-  else if (((previous_state == slow_ascent) + (direction == 2) + (telemetry->acc_globZ < 0) + (!telemetry->parachute_state)) >= 3)
-    long fallTime = telemetry->time;  
+  else if (((previous_state == slow_ascent) + (direction == 2) + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state)) >= 3)
+    long fallTime = flight_data->time;  
     return quick_descent;
-  else if (((previous_state == quick_descent) + (direction == 2)  + (telemetry->acc_globZ < 0) + (!telemetry->parachute_state)) >= 3) // parachute released, quick_descent -> slow_descent
-    if (falltime - telemetry->time >= 1.5 && chute_check(&flight_data))
+  else if (((previous_state == quick_descent) + (direction == 2)  + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state)) >= 3) // parachute released, quick_descent -> slow_descent
+    if (falltime - flight_data->time >= 1.5 && chute_check(&flight_data))
     {
-      telemetry->parachute_state = 1; 
+      flight_data->parachute_state = 1; 
       // release parachute;
        return slow_descent;
     }
     else{return quick_descent;}
-  else if (((previous_state == slow_descent)  + (direction == 2) + (telemetry->acc_globZ < 0) + (telemetry->parachute_state)) >= 3)
+  else if (((previous_state == slow_descent)  + (direction == 2) + (flight_data->acc_globZ < 0) + (flight_data->parachute_state)) >= 3)
     return slow_descent;
-  else if (((previous_state == slow_descent) + (direction == 3) + (-1 < telemetry->acc_globZ && telemetry->acc_globZ < 1) + (telemetry->parachute_state)) >=3)
+  else if (((previous_state == slow_descent) + (direction == 3) + (-1 < flight_data->acc_globZ && flight_data->acc_globZ < 1) + (flight_data->parachute_state)) >=3)
     return touch_down;
   else if (previous_state == touch_down)
     return touch_down;
   else
     return FALSE; // error
 }
+*/
 
 void emergency_chute(telemetry *flight_data)
 {
-  if (flight_data->alt < 100 && flight_data->direction ==3 && !telemetry->parachute_state )
+  if (flight_data->alt < 100 && flight_data->direction ==3 && !flight_data->parachute_state )
   {
-    telemetry->parachute_state = 1; 
+    flight_data->parachute_state = 1; 
     //release parachute
   }
-  else if(flight_data->alt < 0 && !telemetry->parachute_state && (state_of_flight == launch_pad || flight_data->alt < -2))
+/*  else if(flight_data->alt < 0 && !flight_data->parachute_state && (flight_data->state_of_flight == launch_pad || flight_data->alt < -2))
   {
-    telemetry->parachute_state = 1; 
+    flight_data->parachute_state = 1; 
     //release parachute
-  }
+  }*/
 }
 
 /*

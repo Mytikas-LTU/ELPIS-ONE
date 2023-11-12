@@ -22,11 +22,10 @@ enum STATE // Defines stages
 
 enum Direction // Defines directions
 {
-  upp = 1
-  flat = 2
+  upp = 1,
+  flat = 2,
   down = 3
-  FALSE = 0
-}
+};
 
 struct telemetry
 {
@@ -42,7 +41,7 @@ struct telemetry
   //float gravX;
   //float gravY;
   //float gravZ;
-  long time; 
+  long time;
 
 };
 
@@ -61,4 +60,7 @@ int gen_dummy_data(telemetry *telemetry, float i, int current_state);
  * returns the rockets current stage in its flight
  **/
 int state_of_flight_func(telemetry *telemetry, int previous_state);
+
+void emergency_chute(telemetry *flight_data);
+
 #endif
