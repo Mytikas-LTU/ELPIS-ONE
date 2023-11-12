@@ -298,14 +298,10 @@ void setup() {
     Serial.println("enabling servo");
     shuteServo.attach(9);
     shuteServo.write(180);
-    Serial.println("servo 180");
-
+    Serial.println("servo in OPEN position");
     delay(5000);
     shuteServo.write(90);
-    Serial.println("servo locked");
-    delay(5000);
-    shuteServo.write(180);
-    Serial.println("servo deployed");
+    Serial.println("servo in LOCKED position");
 
 #endif
     digitalWrite(LAUNCH_LED_PIN,HIGH);
