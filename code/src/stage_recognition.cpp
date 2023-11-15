@@ -4,7 +4,7 @@
 
 
 // function that generates values for acc, vel and height to check against stage_recognition
-/*#if Enable_DummyData
+#if Enable_DummyData
 int gen_dummy_data(telemetry *telemetry, float i, int current_state)
 {
   float dt = 0.001; // number of time-unit a loop represents
@@ -49,8 +49,8 @@ int gen_dummy_data(telemetry *telemetry, float i, int current_state)
   return 0;
 }
 #endif
-*/
-/*
+
+
 int approx_direction(float *presArr, float basePres ){
   float diff[50];
   float sum = 0;
@@ -75,10 +75,10 @@ int approx_direction(float *presArr, float basePres ){
   }
    
 }
-*/
+
 
 // function that declares rockets stage in flight depending on the generated values and its previous stage
-/*
+
 int state_of_flight_func(telemetry *flight_data, int previous_state)
 {
   if (((previous_state == launch_pad) + (direction == 3) + (-1 < flight_data->acc_globZ && flight_data->acc_globZ < 1) + (!flight_data->parachute_state)) >= 3 )
@@ -111,7 +111,7 @@ int state_of_flight_func(telemetry *flight_data, int previous_state)
   else
     return FALSE; // error
 }
-*/
+
 
 void emergency_chute(telemetry *flight_data)
 {
@@ -120,18 +120,12 @@ void emergency_chute(telemetry *flight_data)
     flight_data->parachute_state = 1; 
     //release parachute
   }
-/*  else if(flight_data->alt < 0 && !flight_data->parachute_state && (flight_data->state_of_flight == launch_pad || flight_data->alt < -2))
+  else if(flight_data->alt < 0 && !flight_data->parachute_state && (flight_data->state_of_flight == launch_pad || flight_data->alt < -2))
   {
     flight_data->parachute_state = 1; 
     //release parachute
-  }*/
+  }
 }
-
-/*
-int chute_check(telemetry *flight_data){
-Work in progress
-}
-*/
 
 
 
