@@ -89,7 +89,7 @@ int state_of_flight_func(telemetry *flight_data, int previous_state)
     return quick_ascent;
   else if (((previous_state == quick_ascent) +  (flight_data->acc_globZ >= 0) + (!flight_data->parachute_state)) >= 2 )
     return quick_ascent;
-  else if (((previous_state == quick_ascent) + (flight_data->direction ==1 > 0) + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state)) >= 3)
+  else if (((previous_state == quick_ascent) + ((flight_data->direction ==1) > 0) + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state)) >= 3)
     return slow_ascent;
   else if (((previous_state == slow_ascent) +  (flight_data->direction ==1) + (flight_data->acc_globZ < 0) +  (!flight_data->parachute_state)) >=3)
     return slow_ascent;
