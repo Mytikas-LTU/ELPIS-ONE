@@ -7,8 +7,8 @@
 // Plug in SCK ==> GPIO5 (D1)
 // Plug in SDA ==> GPIO4 (D2)
 
-#define ENABLE_BAROMETER 0
-#define ENABLE_ACCELEROMETER 0
+#define ENABLE_BAROMETER 1
+#define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 1
 #define ENABLE_LOGGING 1
 #define ENABLE_SERVO 1
@@ -397,9 +397,9 @@ void loop() {
     }
 #endif
 
+#if ENABLE_BAROMETER
     Serial.print(temp);
     Serial.print(" *C, ");
-
 
     Serial.print(pres);
     Serial.print(" Pa, ");
@@ -410,6 +410,11 @@ void loop() {
     Serial.print(alt-oldalt);
     Serial.print(" m/s, ");
 
+    oldalt = alt;
+
+#endif
+
+#if ENABLE_ACCELEROMETER
     Serial.print("Acceleration vector: X: ");
     Serial.print(acc.x);
     Serial.print(", y: ");
@@ -440,8 +445,8 @@ void loop() {
     Serial.print(vec.yr);                        Serial.print("\t");
     Serial.print("zr: ");
     Serial.print(vec.zr);                        Serial.print("\t");
+#endif
 
-    oldalt = alt;
 
     Serial.println();
 
