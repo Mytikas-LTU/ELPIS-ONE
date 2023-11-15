@@ -54,8 +54,7 @@ int gen_dummy_data(telemetry *telemetry, float i, int current_state)
 int approx_direction(float *presArr, float basePres ){
   float diff[50];
   float sum = 0;
-  int i  = 0;
-  for (i = 0; i < 50; i++)
+  for (int i = 0; i < 50; i++)
   {
     diff[i] = presArr[0] - presArr[i];
     sum+=diff[i];
