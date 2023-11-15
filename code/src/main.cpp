@@ -7,8 +7,8 @@
 // Plug in SCK ==> GPIO5 (D1)
 // Plug in SDA ==> GPIO4 (D2)
 
-#define ENABLE_BAROMETER 0
-#define ENABLE_ACCELEROMETER 0
+#define ENABLE_BAROMETER 1
+#define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 1
 #define ENABLE_LOGGING 1
 #define ENABLE_SERVO 1
@@ -32,6 +32,9 @@
 #define SERVO_PIN (9)
 
 #define BNO08X_RESET -1
+
+#define SERVO_OPEN 180
+#define SERVO_LOCKED 90
 
 Adafruit_BMP280 bmp; // I2C
 //Adafruit_BMP280 bmp(BMP_CS); // hardware SPI
@@ -297,10 +300,10 @@ void setup() {
 #if ENABLE_SERVO
     Serial.println("enabling servo");
     shuteServo.attach(9);
-    shuteServo.write(180);
+    shuteServo.write(SERVO_OPEN);
     Serial.println("servo in OPEN position");
     delay(5000);
-    shuteServo.write(90);
+    shuteServo.write(SERVO_LOCKED);
     Serial.println("servo in LOCKED position");
 
 #endif
@@ -308,13 +311,14 @@ void setup() {
 }
 
 void loop() {
-/*
+
     char buf[10];
     float temp,
           alt,
           pres;
     digitalWrite(LED_PIN,HIGH);
-    
+
+#if ENABLE_ACCELEROMETER
     sh2_Accelerometer_t acc, grav;
     sh2_RotationVectorWAcc_t rotVec;
 
@@ -347,6 +351,7 @@ void loop() {
             quaternionToEulerGI(&sensorValue.un.gyroIntegratedRV, &sensorValue.un.accelerometer, &vec);
             break;
     }
+#endif
 
     //Gather data
 #if ENABLE_BAROMETER
@@ -385,18 +390,16 @@ void loop() {
 
 #if ENABLE_SERVO
     if(flight_data.parachute_state == 1 || alt_index >= 50){ 
-        shuteServo.write(90); 
-        
+        shuteServo.write(90);
     }
-    else { 
-        shuteServo.write(0); 
-        rotated = false;    
+    else {
+        shuteServo.write(0);
     }
 #endif
 
+#if ENABLE_BAROMETER
     Serial.print(temp);
     Serial.print(" *C, ");
-
 
     Serial.print(pres);
     Serial.print(" Pa, ");
@@ -407,6 +410,11 @@ void loop() {
     Serial.print(alt-oldalt);
     Serial.print(" m/s, ");
 
+    oldalt = alt;
+
+#endif
+
+#if ENABLE_ACCELEROMETER
     Serial.print("Acceleration vector: X: ");
     Serial.print(acc.x);
     Serial.print(", y: ");
@@ -437,15 +445,13 @@ void loop() {
     Serial.print(vec.yr);                        Serial.print("\t");
     Serial.print("zr: ");
     Serial.print(vec.zr);                        Serial.print("\t");
+#endif
 
-    oldalt = alt;
 
     Serial.println();
 
 
-*/
     // constant time loop
-    Serial.println("loop disabled");
     digitalWrite(LED_PIN,LOW);
     while(millis()-lastLoop < 1000/sampleRate) {}
     lastLoop = millis();
