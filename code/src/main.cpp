@@ -10,15 +10,12 @@
 #define ENABLE_BAROMETER 1
 #define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 1
-#define ENABLE_LOGGING 1
+#define ENABLE_LOGGING 0
 #define ENABLE_SERVO 1
 
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_BMP280.h>
-//#include "SdFat.h"
-//#include "sdios.h"
-//#include <MPU6050_light.h>
 #include <SD.h>
 #include <Adafruit_BNO08x.h>
 #include<Servo.h>
@@ -37,14 +34,8 @@
 #define SERVO_LOCKED 90
 
 Adafruit_BMP280 bmp; // I2C
-//Adafruit_BMP280 bmp(BMP_CS); // hardware SPI
-//Adafruit_BMP280 bmp(BMP_CS, BMP_MOSI, BMP_MISO,  BMP_SCK);
-//MPU6050 mpu(Wire);
 Adafruit_BNO08x bno08x(BNO08X_RESET);
 
-const int8_t DISABLE_CS_PIN = -1; //needed according to examples
-
-const uint8_t SD_CS_PIN = SS; // Define the ChipSelect-pin
 
 const uint8_t LED_PIN = 2; // Define the LED-pin
 const uint8_t ERROR_LED_PIN = 3; // Define the LED-pin
@@ -62,7 +53,6 @@ Servo shuteServo;
 
 sh2_SensorValue_t sensorValue; //contains the sensor data for bno085
 
-//#define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(10))
 #ifdef FAST_MODE
   // Top frequency is reported to be 1000Hz (but freq is somewhat variable)
   sh2_SensorId_t reportType = SH2_GYRO_INTEGRATED_RV;
@@ -83,21 +73,16 @@ struct rot_acc {
 char filename[10] = "tele.txt";
 float oldalt;
 float basePressure;
-char buffer[8192];
-float floatBuffer[2048];
 int ptr=0;
 long lastLoop;
 File file;
-bool rotated = false;
-
 // Initialisation of stage_recognition
-int alt_index = 0; 
-float presArr[50]; 
+int alt_index = 0;
+float presArr[50];
 int prevStage = 1;
 struct telemetry flight_data;
 
-void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y, float z){
-  
+void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y, float z) {
     float s = pow(-2,(sqrt((i*i)+(j*j)+(k*k)+(r*r))));
 
     float r11 = 1-2*s*((j*j)+(k*k));
@@ -154,7 +139,7 @@ bool SetReports() {
 
 //handles potential errors when setting BNO reports, currenlty unused
 void BNOError(){
-    //maybye flash the light to indicate errors?   
+    //maybye flash the light to indicate errors?
 }
 
 void printVec3(char *vecName, float x, float y, float z, bool lineBreak) {
@@ -192,24 +177,19 @@ void setup() {
     digitalWrite(LAUNCH_LED_PIN,LOW);
     digitalWrite(ERROR_LED_PIN,LOW);
     Serial.begin(9600);
-    //delay(10000);   // wait for native usb
     while (!Serial) {
         yield();
     }
-//    Wire.begin(4,5);
-    Serial.println("Flash");
+    Serial.println("Begin boot process");
     flash(3);
-    //analogWrite(LED_PIN,128);
     delay(flashTime*3);
 
 #if ENABLE_ACCELEROMETER
     Serial.println("Init BNO085!");
-    //Wire.begin(0,5);
     while(!bno08x.begin_I2C()) {
         Serial.println("BNO error");
         digitalWrite(ERROR_LED_PIN,HIGH);
     }
-
     //check whether all the reports could be found, otherwise prevent the rest of code from runnning
     if(!SetReports()) {
         while(true) {
@@ -217,6 +197,7 @@ void setup() {
         }
     }
     delay(1000);
+    Serial.println("BNO085 Initialized");
 #else
     Serial.println("BNO085 Disabled");
 #endif
@@ -224,25 +205,13 @@ void setup() {
 #if ENABLE_BAROMETER
     Serial.println("Initializing BMP280");
     flash(1);
-    //analogWrite(LED_PIN,128);
     delay(flashTime*3);
-    unsigned status;
-    status = bmp.begin();
-    if (!status) {
-        Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
-                      "try a different address!"));
-        Serial.print("SensorID was: 0x"); Serial.println(bmp.sensorID(),16);
-        Serial.print("        ID of 0xFF probably means a bad address, a BMP 180 or BMP 085\n");
-        Serial.print("   ID of 0x56-0x58 represents a BMP 280,\n");
-        Serial.print("        ID of 0x60 represents a BME 280.\n");
-        Serial.print("        ID of 0x61 represents a BME 680.\n");
-        while (1) {
-            flash(1);
-            digitalWrite(LED_PIN,HIGH);
+    while(!bmp.begin()) {
+        Serial.println("BMP280 Error");
+        digitalWrite(ERROR_LED_PIN,HIGH);
+        flash(1);
+        delay(flashTime*3);
 
-            delay(flashTime*3);
-            digitalWrite(ERROR_LED_PIN,HIGH);
-        }
       }
     /* Default settings from datasheet. */
     bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
@@ -250,42 +219,40 @@ void setup() {
                     Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
                     Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                     Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
-    Serial.println(F("BMP280 initialized!"));
+    Serial.println("BMP280 initialized!");
 #else
     Serial.println("BMP280 Disabled");
 #endif
 
 #if ENABLE_CARDWRITER
-    Serial.println(F("Initializing SD-card"));
+    Serial.println("Initializing SD-card");
     flash(2);
-    //analogWrite(LED_PIN,128);
     delay(flashTime*3);
     while (!SD.begin(chipSelect)) {
         digitalWrite(ERROR_LED_PIN,HIGH);
         Serial.println("Failure to communicate with SD-card");
         flash(2);
-        digitalWrite(LED_PIN,HIGH);
         delay(flashTime*3);
     }
     Serial.println("SD-card initialized!");
 
+#if ENABLE_LOGGING
     Serial.println("Opening file");
     flash(3);
-    //analogWrite(LED_PIN,128);
     delay(flashTime*3);
-    
-    file = SD.open(filename, O_RDWR | O_CREAT | O_APPEND);
-    if (!file) {
-        Serial.println("Failure to open file");
-        while (1) {
-            digitalWrite(ERROR_LED_PIN,HIGH);
-            flash(3);
-            digitalWrite(LED_PIN,HIGH);
-            delay(flashTime*3);
-        }
 
+    file = SD.open(filename, O_RDWR | O_CREAT | O_APPEND);
+    while (!file) {
+        Serial.println("Failure to open file");
+        digitalWrite(ERROR_LED_PIN,HIGH);
+        flash(3);
+        delay(flashTime*3);
+        file = SD.open(filename, O_RDWR | O_CREAT | O_APPEND);
     }
     Serial.println("File open!");
+#else
+    Serial.println("Logging disabled");
+#endif
 #else
     Serial.println("Card writer disabled");
 #endif
@@ -323,21 +290,20 @@ void setup() {
 #endif
 
 #if ENABLE_SERVO
-    Serial.println("enabling servo");
+    Serial.println("Enabling servo");
     shuteServo.attach(9);
     shuteServo.write(SERVO_OPEN);
-    Serial.println("servo in OPEN position");
+    Serial.println("Servo in OPEN position");
     delay(5000);
     shuteServo.write(SERVO_LOCKED);
-    Serial.println("servo in LOCKED position");
-
+    Serial.println("Servo in LOCKED position");
+#else
+    Serial.println("Servo disabled");
 #endif
     digitalWrite(LAUNCH_LED_PIN,HIGH);
 }
 
 void loop() {
-
-    char buf[10];
     float temp,
           alt,
           pres;
@@ -378,30 +344,25 @@ void loop() {
     }
 #endif
 
-    //Gather data
 #if ENABLE_BAROMETER
     temp = bmp.readTemperature();
     pres = bmp.readPressure();
     alt = bmp.readAltitude(basePressure);
 #endif
 
-    //a drop of 1.2 kPa is equal to 100 m altitude
-
-    // write data to card
-    
-  alt_index++;
-  presArr[alt_index%50] = flight_data.pres;
-  if (alt_index >=50)
-  {
-    flight_data.direction = approx_direction(presArr, basePressure); //will be called before state_of_flight in execution order.
-    if (flight_data.direction==0)
+    alt_index++;
+    presArr[alt_index%50] = flight_data.pres;
+    if (alt_index >=50)
     {
-        Serial.print("Error in state of flight");
+        flight_data.direction = approx_direction(presArr, basePressure); //will be called before state_of_flight in execution order.
+        if (flight_data.direction==0){
+            Serial.print("Error in state of flight");
+        } else {
+            prevStage = state_of_flight_func(&flight_data, prevStage);
+        }
     }
-    else{prevStage = state_of_flight_func(&flight_data, prevStage);}
-  }
-  emergency_chute(&flight_data, prevStage);
-//    memcpy(&floatBuffer[ptr], &pres, 4);
+    emergency_chute(&flight_data, prevStage);
+
     ptr += 1;
     file.println(pres);
     if(ptr >= 800) {
@@ -418,11 +379,11 @@ void loop() {
     }
 
 #if ENABLE_SERVO
-    if(flight_data.parachute_state == 1 || alt_index >= 50){ 
-        shuteServo.write(90);
+    if(flight_data.parachute_state == 1){
+        shuteServo.write(SERVO_OPEN);
     }
     else {
-        shuteServo.write(0);
+        shuteServo.write(SERVO_LOCKED);
     }
 #endif
 
@@ -460,10 +421,7 @@ void loop() {
     Serial.print(vec.zr);                        Serial.print("\t");*/
 #endif
 
-
     Serial.println();
-
-
     // constant time loop
     digitalWrite(LED_PIN,LOW);
     while(millis()-lastLoop < 1000/sampleRate) {}
