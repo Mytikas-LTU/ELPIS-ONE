@@ -27,22 +27,38 @@ enum Direction // Defines directions
   down = 3
 };
 
+struct vec3
+{
+  float x;
+  float y;
+  float z;
+};
+
+struct quat
+{
+  float R;
+  float I;
+  float J;
+  float K;
+};
+
 struct telemetry
 {
-  float accX;
-  float accY;
-  float accZ;
+  vec3 acc;
+
+  vec3 rot_acc;
+
+  vec3 grav;
+
+  quat rot;
+
   float acc_globZ;
   int direction;
   float alt;
   int parachute_state;
   float temp;
   float pres;
-  //float gravX;
-  //float gravY;
-  //float gravZ;
   long time;
-
 };
 
 /**
