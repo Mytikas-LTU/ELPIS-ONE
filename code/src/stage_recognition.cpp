@@ -74,7 +74,7 @@ int approx_direction(float *presArr, float basePres ){
   {
     return down; //3
   }
-   
+  else return 0; 
 }
 
 
