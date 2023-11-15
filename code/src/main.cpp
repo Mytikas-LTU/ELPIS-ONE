@@ -158,6 +158,32 @@ void BNOError(){
     //maybye flash the light to indicate errors?   
 }
 
+void printVec3(char *vecName, float x, float y, float z, bool lineBreak) {
+    Serial.print(vecName);
+    Serial.print("\tx: ");
+    Serial.print(x);
+    Serial.print(",\ty: ");
+    Serial.print(y);
+    Serial.print(",\tz: ");
+    Serial.print(z);
+    if(lineBreak)
+        Serial.println();
+}
+
+void printQuat(char *quatName, float r, float i, float j, float k, bool lineBreak){
+    Serial.print(quatName);
+    Serial.print(",\tr: ");
+    Serial.print(r);
+    Serial.print(",\ti: ");
+    Serial.print(i);
+    Serial.print(",\tj: ");
+    Serial.print(j);
+    Serial.print(",\tk: ");
+    Serial.print(k);
+    if(lineBreak)
+        Serial.println();
+}
+
 void setup() {
     float pressures = 0;
     pinMode(LED_PIN,OUTPUT);
@@ -415,36 +441,20 @@ void loop() {
 #endif
 
 #if ENABLE_ACCELEROMETER
-    Serial.print("Acceleration vector: X: ");
-    Serial.print(acc.x);
-    Serial.print(", y: ");
-    Serial.print(acc.y);
-    Serial.print(", z: ");
-    Serial.println(acc.z);
+    printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
 
-    Serial.print("Gravity vector: X: ");
-    Serial.print(grav.x);
-    Serial.print(", Y: ");
-    Serial.print(grav.y);
-    Serial.print(", Z: ");
-    Serial.println(grav.z);
+    printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
 
-    Serial.print("Rotation vector: r: ");
-    Serial.print(rotVec.real);
-    Serial.print(", i: ");
-    Serial.print(rotVec.i);
-    Serial.print(", j: ");
-    Serial.print(rotVec.j);
-    Serial.print(", k: ");
-    Serial.println(rotVec.k);
+    printQuat("Rotation Vector", rotVec.real, rotVec.i, rotVec.j, rotVec.k, true);
 
-
+    printVec3("Rotated Acceleration", vec.xr, vec.yr, vec.zr, true);
+/*
     Serial.print("xr: ");
     Serial.print(vec.xr);                        Serial.print("\t");
     Serial.print("yr: ");
     Serial.print(vec.yr);                        Serial.print("\t");
     Serial.print("zr: ");
-    Serial.print(vec.zr);                        Serial.print("\t");
+    Serial.print(vec.zr);                        Serial.print("\t");*/
 #endif
 
 
