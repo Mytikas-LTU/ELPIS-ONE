@@ -61,6 +61,8 @@ int gen_dummy_data(telemetry *telemetry, float i, int current_state);
  **/
 int state_of_flight_func(telemetry *telemetry, int previous_state);
 
-void emergency_chute(telemetry *flight_data);
+void emergency_chute(telemetry *flight_data,int previous_state);
+
+int approx_direction(float *presArr, float basePres );
 
 #endif

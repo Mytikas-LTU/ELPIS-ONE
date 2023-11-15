@@ -93,7 +93,6 @@ bool rotated = false;
 // Initialisation of stage_recognition
 int alt_index = 0; 
 float presArr[50]; 
-int state_of_flight = 1;
 int prevStage = 1;
 struct telemetry flight_data;
 
@@ -394,10 +393,14 @@ void loop() {
   presArr[alt_index%50] = flight_data.pres;
   if (alt_index >=50)
   {
-//    flight_data.direction = approx_direction(&presArr) //will be called before state_of_flight in execution order.
-//    state_of_flight = state_of_flight_func(&flight_data, prevStage)
+    flight_data.direction = approx_direction(presArr, basePressure); //will be called before state_of_flight in execution order.
+    if (flight_data.direction==0)
+    {
+        Serial.print("Error in state of flight");
+    }
+    else{prevStage = state_of_flight_func(&flight_data, prevStage);}
   }
-  emergency_chute(&flight_data);
+  emergency_chute(&flight_data, prevStage);
 //    memcpy(&floatBuffer[ptr], &pres, 4);
     ptr += 1;
     file.println(pres);
