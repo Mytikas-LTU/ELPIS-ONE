@@ -73,12 +73,6 @@ sh2_SensorValue_t sensorValue; //contains the sensor data for bno085
   long reportIntervalUs = 5000;
 #endif
 
-struct rot_acc {
-    float xr;
-    float yr;
-    float zr;
-} vec;
-
 
 char filename[10] = "tele.txt";
 float oldalt;
@@ -96,7 +90,7 @@ float presArr[50];
 int prevStage = 1;
 struct telemetry flight_data;
 
-void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y, float z){
+void rotation(float i, float j, float k, float r, vec3 *vec, float x, float y, float z){
   
     float s = pow(-2,(sqrt((i*i)+(j*j)+(k*k)+(r*r))));
 
@@ -112,19 +106,19 @@ void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y
     float r32 = 2*s*((j*j)*(k*k)+(i*i)*(r*r));
     float r33 = 1-2*s*((i*i)+(j*j));
 
-    vec->xr=(r11*x+r12*y+r13*z);
-    vec->yr=(r21*x+r22*y+r23*z);
-    vec->zr=(r31*x+r32*y+r33*z);
+    vec->x=(r11*x+r12*y+r13*z);
+    vec->y=(r21*x+r22*y+r23*z);
+    vec->z=(r31*x+r32*y+r33*z);
 }
-
-void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, sh2_Accelerometer_t* accelerometer, rot_acc* vec) {
+/*
+void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, sh2_Accelerometer_t* accelerometer, vec3* vec) {
     rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
 }
 
-void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, sh2_Accelerometer_t* accelerometer, rot_acc* vec) {
+void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, sh2_Accelerometer_t* accelerometer, vec3* vec) {
     rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
 }
-
+*/
 void flash(int times) {
     for (int i = 0; i<times; i++) {
         digitalWrite(LED_PIN,HIGH);
@@ -369,12 +363,12 @@ void loop() {
         case SH2_GRAVITY:
             grav = sensorValue.un.gravity;
             break;
-        case SH2_ARVR_STABILIZED_RV:
+        /*case SH2_ARVR_STABILIZED_RV:
             quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &sensorValue.un.accelerometer, &vec);
         case SH2_GYRO_INTEGRATED_RV:
-            // faster (more noise?)
+             faster (more noise?)
             quaternionToEulerGI(&sensorValue.un.gyroIntegratedRV, &sensorValue.un.accelerometer, &vec);
-            break;
+            break; */
     }
 #endif
 
@@ -450,7 +444,7 @@ void loop() {
 
     printQuat("Rotation Vector", rotVec.real, rotVec.i, rotVec.j, rotVec.k, true);
 
-    printVec3("Rotated Acceleration", vec.xr, vec.yr, vec.zr, true);
+    //printVec3("Rotated Acceleration", acc_.xr, vec.yr, vec.zr, true);
 /*
     Serial.print("xr: ");
     Serial.print(vec.xr);                        Serial.print("\t");
