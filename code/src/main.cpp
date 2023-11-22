@@ -388,16 +388,16 @@ void loop() {
 #endif
 
 #if ENABLE_BAROMETER
-    Serial.print(temp);
+    Serial.print(flight_data.temp);
     Serial.print(" *C, ");
 
-    Serial.print(pres);
+    Serial.print(flight_data.pres);
     Serial.print(" Pa, ");
 
-    Serial.print(alt);
+    Serial.print(flight_data.alt);
     Serial.print(" m, ");
 
-    Serial.print(alt-oldalt);
+    Serial.print(flight_data.alt-oldalt);
     Serial.print(" m/s, ");
 
     oldalt = alt;

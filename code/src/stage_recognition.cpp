@@ -60,7 +60,7 @@ int approx_direction(float *presArr, float basePres ){
   }
   float median = sum/50;
 
-  if (median < basePres * 1.5 && median > basePres * 0.5) //only works at ground level 
+  if (median < basePres * 1.05 && median > basePres * 0.95) //only works at ground level 
   {
     return flat; //2
   }
