@@ -97,9 +97,9 @@ void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y
     float r32 = 2*s*((j*j)*(k*k)+(i*i)*(r*r));
     float r33 = 1-2*s*((i*i)+(j*j));
 
-    vec->x=(r11*x+r12*y+r13*z);
-    vec->y=(r21*x+r22*y+r23*z);
-    vec->z=(r31*x+r32*y+r33*z);
+    vec->xr=(r11*x+r12*y+r13*z);
+    vec->yr=(r21*x+r22*y+r23*z);
+    vec->zr=(r31*x+r32*y+r33*z);
 }
 /*
 void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, sh2_Accelerometer_t* accelerometer, vec3* vec) {
