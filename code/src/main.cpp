@@ -63,6 +63,12 @@ sh2_SensorValue_t sensorValue; //contains the sensor data for bno085
   long reportIntervalUs = 5000;
 #endif
 
+struct rot_acc {
+    float xr;
+    float yr;
+    float zr;
+} vec;
+
 
 char filename[10] = "tele.txt";
 float oldalt;
