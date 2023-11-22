@@ -7,11 +7,11 @@
 // Plug in SCK ==> GPIO5 (D1)
 // Plug in SDA ==> GPIO4 (D2)
 
-#define ENABLE_BAROMETER 1
+#define ENABLE_BAROMETER 0
 #define ENABLE_ACCELEROMETER 1
-#define ENABLE_CARDWRITER 1
+#define ENABLE_CARDWRITER 0
 #define ENABLE_LOGGING 0
-#define ENABLE_SERVO 1
+#define ENABLE_SERVO 0
 
 #include <Wire.h>
 #include <SPI.h>
@@ -76,7 +76,7 @@ float presArr[50];
 int prevStage = 1;
 struct telemetry flight_data;
 
-void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y, float z) {
+void rotation(float i, float j, float k, float r, vec3* vec, float x, float y, float z) {
     float s = pow(-2,(sqrt((i*i)+(j*j)+(k*k)+(r*r))));
 
     float r11 = 1-2*s*((j*j)+(k*k));
@@ -160,6 +160,19 @@ void printQuat(char *quatName, float r, float i, float j, float k, bool lineBrea
     Serial.print(k);
     if(lineBreak)
         Serial.println();
+}
+
+//The Hamilton Product, gracefully copied from wikipedia
+quat multiply_quat(quat q1, quat q2) {
+    float r = q1.R*q2.R + q1.I*q2.I + q1.J*q2.J + q1.K*q2.K;
+    float i = q1.R*q2.I + q1.I*q2.R + q1.J*q2.K + q1.K*q2.J;
+    float j = q1.R*q2.J + q1.I*q2.K + q1.J*q2.R + q1.K*q2.I;
+    float k = q1.R*q2.K + q1.I*q2.J + q1.J*q2.I + q1.K*q2.R;
+    return quat{r, i, j, k};
+}
+
+quat invert_quat(quat q){
+    return{q.R, -q.I, -q.J, -q.K};
 }
 
 void setup() {
@@ -304,8 +317,8 @@ void loop() {
     digitalWrite(LED_PIN,HIGH);
 
 #if ENABLE_ACCELEROMETER
-    sh2_Accelerometer_t acc, grav;
-    sh2_RotationVectorWAcc_t rotVec;
+    vec3 acc, grav;
+    quat rotVec;
 
     if(bno08x.wasReset()) {
         Serial.println("BNO085 was reset");
@@ -321,13 +334,20 @@ void loop() {
     //read the sensor data
     switch(sensorValue.sensorId) {
         case SH2_ACCELEROMETER:
-            acc=sensorValue.un.accelerometer;
+            acc.x=sensorValue.un.accelerometer.x;
+            acc.y=sensorValue.un.accelerometer.y;
+            acc.z=sensorValue.un.accelerometer.z;
             break;
         case SH2_ROTATION_VECTOR:
-            rotVec = sensorValue.un.rotationVector;
+            rotVec.R = sensorValue.un.rotationVector.real;
+            rotVec.I = sensorValue.un.rotationVector.i;
+            rotVec.J = sensorValue.un.rotationVector.j;
+            rotVec.K = sensorValue.un.rotationVector.k;
             break;
         case SH2_GRAVITY:
-            grav = sensorValue.un.gravity;
+            grav.x = sensorValue.un.gravity.x;
+            grav.y = sensorValue.un.gravity.y;
+            grav.z = sensorValue.un.gravity.z;
             break;
         /*case SH2_ARVR_STABILIZED_RV:
             quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &sensorValue.un.accelerometer, &vec);
@@ -336,6 +356,14 @@ void loop() {
             quaternionToEulerGI(&sensorValue.un.gyroIntegratedRV, &sensorValue.un.accelerometer, &vec);
             break; */
     }
+
+    //rotate the acceleration vector
+    quat tempAcc = {0, acc.x, acc.y, acc.z};
+    tempAcc = multiply_quat(multiply_quat(invert_quat(rotVec), tempAcc), rotVec);
+    acc.x = tempAcc.I;
+    acc.y = tempAcc.J;
+    acc.z = tempAcc.K;
+
 #endif
 
 #if ENABLE_BAROMETER
@@ -401,9 +429,9 @@ void loop() {
 #if ENABLE_ACCELEROMETER
     printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
 
-    printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
+    //printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
 
-    printQuat("Rotation Vector", rotVec.real, rotVec.i, rotVec.j, rotVec.k, true);
+    //printQuat("Rotation Vector", rotVec.real, rotVec.i, rotVec.j, rotVec.k, true);
 
     //printVec3("Rotated Acceleration", acc_.xr, vec.yr, vec.zr, true);
 /*
