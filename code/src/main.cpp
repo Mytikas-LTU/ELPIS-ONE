@@ -345,18 +345,18 @@ void loop() {
 #endif
 
 #if ENABLE_BAROMETER
-    temp = bmp.readTemperature();
-    pres = bmp.readPressure();
-    alt = bmp.readAltitude(basePressure);
+    flight_data.temp = bmp.readTemperature();
+    flight_data.pres = bmp.readPressure();
+    flight_data.alt = bmp.readAltitude(basePressure);
 #endif
 
     alt_index++;
-    presArr[alt_index%50] = flight_data.pres;
+     presArr[alt_index%50] = flight_data.pres;
     if (alt_index >=50)
     {
         flight_data.direction = approx_direction(presArr, basePressure); //will be called before state_of_flight in execution order.
         if (flight_data.direction==0){
-            Serial.print("Error in state of flight");
+            Serial.print("Error in direction approximation");
         } else {
             prevStage = state_of_flight_func(&flight_data, prevStage);
         }

@@ -52,16 +52,15 @@ int gen_dummy_data(telemetry *telemetry, float i, int current_state)
 
 
 int approx_direction(float *presArr, float basePres ){
-  float diff[50];
   float sum = 0;
   for (int i = 0; i < 50; i++)
   {
-    diff[i] = presArr[0] - presArr[i];
-    sum+=diff[i];
+    sum += presArr[0] - presArr[i];
+    
   }
   float median = sum/50;
 
-  if (median < basePres * 1.005 && median > basePres * 0.995) //only works at ground level 
+  if (median < basePres * 1.5 && median > basePres * 0.5) //only works at ground level 
   {
     return flat; //2
   }
