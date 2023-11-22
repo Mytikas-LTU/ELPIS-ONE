@@ -3,4 +3,4 @@ code/.pio/
 # ignore swap files made by nano
 *.swp
 #ignore vscode
-.vscode
+.vscode/

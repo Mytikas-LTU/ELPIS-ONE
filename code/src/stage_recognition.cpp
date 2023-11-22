@@ -94,13 +94,13 @@ int state_of_flight_func(telemetry *flight_data, int previous_state)
     return slow_ascent;
   else if (((previous_state == slow_ascent) + (flight_data->direction == 2) + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state)) >= 3)
   {
-    fallTime = flight_data->time;  
+    fallTime = flight_data->time;
     return quick_descent;
   }
   else if (((previous_state == quick_descent) + (flight_data->direction == 2)  + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state)) >= 3) // parachute released, quick_descent -> slow_descent
     if (fallTime - flight_data->time >= 1.5 )
     {
-      flight_data->parachute_state = 1; 
+      flight_data->parachute_state = 1;
       // release parachute;
        return slow_descent;
     }
@@ -120,7 +120,7 @@ void emergency_chute(telemetry *flight_data, int previous_state)
 {
   if (flight_data->alt < 100 && flight_data->direction ==3 && !flight_data->parachute_state )
   {
-    flight_data->parachute_state = 1; 
+    flight_data->parachute_state = 1;
     //release parachute
   }
   else if(flight_data->alt < 0 && !flight_data->parachute_state && (previous_state == launch_pad || flight_data->alt < -2))
