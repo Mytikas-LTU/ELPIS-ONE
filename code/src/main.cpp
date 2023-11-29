@@ -116,15 +116,15 @@ void flash(int times) {
 //sets all the sensor outputs to recieve
 //for more information on the sh2 sensorValues refer to the sh2 reference manual(downloaded in docs folder)
 bool SetReports() {
-    if(!bno08x.enableReport(SH2_ROTATION_VECTOR)) {
+    if(!bno08x.enableReport(SH2_ROTATION_VECTOR, 1000000/sampleRate)) {
         Serial.println("Could not enable rotation vector reports!");
         return false;
     }
-    if(!bno08x.enableReport(SH2_ACCELEROMETER)) {
+    if(!bno08x.enableReport(SH2_ACCELEROMETER, 1000000/sampleRate)) {
         Serial.println("Could not enable accelerometer reports!");
         return false;
     }
-    if(!bno08x.enableReport(SH2_GRAVITY)) {
+    if(!bno08x.enableReport(SH2_GRAVITY, 1000000/sampleRate)) {
         Serial.println("Could not enable gravity reports!");
         return false;
     }
@@ -136,7 +136,7 @@ void BNOError(){
     //maybye flash the light to indicate errors?
 }
 
-void printVec3(char *vecName, float x, float y, float z, bool lineBreak) {
+void printVec3(const char *vecName, float x, float y, float z, bool lineBreak) {
     Serial.print(vecName);
     Serial.print("\tx: ");
     Serial.print(x);
@@ -148,7 +148,7 @@ void printVec3(char *vecName, float x, float y, float z, bool lineBreak) {
         Serial.println();
 }
 
-void printQuat(char *quatName, float r, float i, float j, float k, bool lineBreak){
+void printQuat(const char *quatName, float r, float i, float j, float k, bool lineBreak){
     Serial.print(quatName);
     Serial.print(",\tr: ");
     Serial.print(r);
@@ -197,6 +197,7 @@ void setup() {
         Serial.println("BNO error");
         digitalWrite(ERROR_LED_PIN,HIGH);
     }
+    delay(100);
     //check whether all the reports could be found, otherwise prevent the rest of code from runnning
     if(!SetReports()) {
         while(true) {
@@ -331,31 +332,27 @@ void loop() {
         return;
     }
 
-    //read the sensor data
-    switch(sensorValue.sensorId) {
-        case SH2_ACCELEROMETER:
-            acc.x=sensorValue.un.accelerometer.x;
-            acc.y=sensorValue.un.accelerometer.y;
-            acc.z=sensorValue.un.accelerometer.z;
-            break;
-        case SH2_ROTATION_VECTOR:
-            rotVec.R = sensorValue.un.rotationVector.real;
-            rotVec.I = sensorValue.un.rotationVector.i;
-            rotVec.J = sensorValue.un.rotationVector.j;
-            rotVec.K = sensorValue.un.rotationVector.k;
-            break;
-        case SH2_GRAVITY:
-            grav.x = sensorValue.un.gravity.x;
-            grav.y = sensorValue.un.gravity.y;
-            grav.z = sensorValue.un.gravity.z;
-            break;
-        /*case SH2_ARVR_STABILIZED_RV:
-            quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &sensorValue.un.accelerometer, &vec);
-        case SH2_GYRO_INTEGRATED_RV:
-             faster (more noise?)
-            quaternionToEulerGI(&sensorValue.un.gyroIntegratedRV, &sensorValue.un.accelerometer, &vec);
-            break; */
-    }
+    acc.x = 0;
+    acc.y = 0;
+    acc.z = 0;
+
+    //the acceleration
+    acc.x=sensorValue.un.accelerometer.x;
+    acc.y=sensorValue.un.accelerometer.y;
+    acc.z=sensorValue.un.accelerometer.z;
+
+    //the rotation vector
+    rotVec.R = sensorValue.un.rotationVector.real;
+    rotVec.I = sensorValue.un.rotationVector.i;
+    rotVec.J = sensorValue.un.rotationVector.j;
+    rotVec.K = sensorValue.un.rotationVector.k;
+
+    //the gravity vector
+    grav.x = sensorValue.un.gravity.x;
+    grav.y = sensorValue.un.gravity.y;
+    grav.z = sensorValue.un.gravity.z;
+        
+    //printVec3("Unrotated acceleration vector", acc.x, acc.y, acc.z, true);
 
     //rotate the acceleration vector
     quat tempAcc = {0, acc.x, acc.y, acc.z};
@@ -378,7 +375,7 @@ void loop() {
     {
         flight_data.direction = approx_direction(presArr, basePressure); //will be called before state_of_flight in execution order.
         if (flight_data.direction==0){
-            Serial.print("Error in state of flight");
+            //Serial.print("Error in state of flight");
         } else {
             prevStage = state_of_flight_func(&flight_data, prevStage);
         }
@@ -443,7 +440,7 @@ void loop() {
     Serial.print(vec.zr);                        Serial.print("\t");*/
 #endif
 
-    Serial.println();
+    //Serial.println();
     // constant time loop
     digitalWrite(LED_PIN,LOW);
     while(millis()-lastLoop < 1000/sampleRate) {}
