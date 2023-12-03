@@ -49,6 +49,38 @@ const int sampleRate = 10; // samlpes per second
 
 const int chipSelect = SS1;
 
+struct rot_acc {
+    float xr;
+    float yr;
+    float zr;
+} vec;
+
+struct rot_mat{
+  float r11;
+  float r12;
+  float r13;
+  float r21;
+  float r22;
+  float r23;
+  float r31;
+  float r32;
+  float r33;
+} mat;
+
+struct rot_mat2{
+  float r11;
+  float r12;
+  float r13;
+  float r21;
+  float r22;
+  float r23;
+  float r31;
+  float r32;
+  float r33;
+} mat2;
+
+int i = 0;
+
 Servo shuteServo;
 
 sh2_SensorValue_t sensorValue; //contains the sensor data for bno085
@@ -76,34 +108,78 @@ float presArr[50];
 int prevStage = 1;
 struct telemetry flight_data;
 
-void rotation(float i, float j, float k, float r, vec3* vec, float x, float y, float z) {
-    float s = pow(-2,(sqrt((i*i)+(j*j)+(k*k)+(r*r))));
+void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y, float z, rot_mat* mat, rot_mat2* mat2){
+  
+  if (i == 0 || (i==0 && j ==0 && k==0 && r==0)){
+    float s = pow((sqrt((i*i)+(j*j)+(k*k)+(r*r))),-2);
 
-    float r11 = 1-2*s*((j*j)+(k*k));
-    float r12 = 2*s*((i*i)*(j*j)-(k*k)*(r*r));
-    float r13 = 2*s*((i*i)*(k*k)+(j*j)*(r*r));
+    mat->r11 = 1-2*s*((j*j)+(k*k));
+    mat->r12 = 2*s*((i*i)*(j*j)-(k*k)*(r*r));
+    mat->r13 = 2*s*((i*i)*(k*k)+(j*j)*(r*r));
 
-    float r21 = 2*s*((i*i)*(j*j)+(k*k)*(r*r));
-    float r22 = 1-2*s*((i*i)+(k*k));
-    float r23 = 2*s*((j*j)*(k*k)-(i*i)*(r*r));
+    mat->r21 = 2*s*((i*i)*(j*j)+(k*k)*(r*r));
+    mat->r22 = 1-2*s*((i*i)+(k*k));
+    mat->r23 = 2*s*((j*j)*(k*k)-(i*i)*(r*r));
 
-    float r31 = 2*s*((i*i)*(k*k)-(j*j)*(r*r));
-    float r32 = 2*s*((j*j)*(k*k)+(i*i)*(r*r));
-    float r33 = 1-2*s*((i*i)+(j*j));
+    mat->r31 = 2*s*((i*i)*(k*k)-(j*j)*(r*r));
+    mat->r32 = 2*s*((j*j)*(k*k)+(i*i)*(r*r));
+    mat->r33 = 1-2*s*((i*i)+(j*j));
 
-    vec->x=(r11*x+r12*y+r13*z);
-    vec->y=(r21*x+r22*y+r23*z);
-    vec->z=(r31*x+r32*y+r33*z);
+    vec->xr=(mat->r11*x+mat->r12*y+mat->r13*z);
+    vec->yr=(mat->r21*x+mat->r22*y+mat->r23*z);
+    vec->zr=(mat->r31*x+mat->r32*y+mat->r33*z);
+
+    i++;
+  }
+  else{
+    float s = pow((sqrt((i*i)+(j*j)+(k*k)+(r*r))), -2);
+
+    mat2->r11 = 1-2*s*((j*j)+(k*k));
+    mat2->r12 = 2*s*((i*i)*(j*j)-(k*k)*(r*r));
+    mat2->r13 = 2*s*((i*i)*(k*k)+(j*j)*(r*r));
+
+    mat2->r21 = 2*s*((i*i)*(j*j)+(k*k)*(r*r));
+    mat2->r22 = 1-2*s*((i*i)+(k*k));
+    mat2->r23 = 2*s*((j*j)*(k*k)-(i*i)*(r*r));
+
+    mat2->r31 = 2*s*((i*i)*(k*k)-(j*j)*(r*r));
+    mat2->r32 = 2*s*((j*j)*(k*k)+(i*i)*(r*r));
+    mat2->r33 = 1-2*s*((i*i)+(j*j));
+
+    float fr11 = mat->r11*mat2->r11+mat->r12*mat2->r21+mat->r13*mat2->r31;
+    float fr12 = mat->r11*mat2->r12+mat->r12*mat2->r22+mat->r13*mat2->r32;
+    float fr13 = mat->r11*mat2->r13+mat->r12*mat2->r23+mat->r13*mat2->r33;
+
+    float fr21 = mat->r21*mat2->r11+mat->r22*mat2->r21+mat->r23*mat2->r31;
+    float fr22 = mat->r21*mat2->r12+mat->r22*mat2->r22+mat->r23*mat2->r32;
+    float fr23 = mat->r21*mat2->r13+mat->r22*mat2->r23+mat->r23*mat2->r33;
+
+    float fr31 = mat->r31*mat2->r11+mat->r32*mat2->r21+mat->r33*mat2->r31;
+    float fr32 = mat->r31*mat2->r12+mat->r32*mat2->r22+mat->r33*mat2->r32;
+    float fr33 = mat->r31*mat2->r13+mat->r32*mat2->r23+mat->r33*mat2->r33;
+
+    vec->xr=(fr11*x+fr12*y+fr13*z);
+    vec->yr=(fr21*x+fr22*y+fr23*z);
+    vec->zr=(fr31*x+fr32*y+fr33*z);
+
+    mat->r11 = fr11;
+    mat->r12 = fr12;
+    mat->r13 = fr13;
+
+    mat->r21 = fr21;
+    mat->r22 = fr22;
+    mat->r23 = fr23;
+
+    mat->r31 = fr31;
+    mat->r32 = fr32;
+    mat->r33 = fr33;
+  }
 }
-/*
-void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, sh2_Accelerometer_t* accelerometer, vec3* vec) {
-    rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
+
+void quaternionToEulerRV(sh2_RotationVectorWAcc_t* qua, vec3* acc, rot_acc* vec, rot_mat* mat, rot_mat2* mat2) {
+    rotation(qua->i, qua->j, qua->k, qua->real, vec, acc->x, acc->y, acc->z, mat, mat2);
 }
 
-void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, sh2_Accelerometer_t* accelerometer, vec3* vec) {
-    rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
-}
-*/
 void flash(int times) {
     for (int i = 0; i<times; i++) {
         digitalWrite(LED_PIN,HIGH);
@@ -320,6 +396,7 @@ void loop() {
 #if ENABLE_ACCELEROMETER
     vec3 acc, grav;
     quat rotVec;
+    sh2_RotationVectorWAcc_t qua;
 
     if(bno08x.wasReset()) {
         Serial.println("BNO085 was reset");
@@ -331,6 +408,7 @@ void loop() {
         Serial.println("Could not get Sensor Values!");
         return;
     }
+    
 
     acc.x = 0;
     acc.y = 0;
@@ -351,6 +429,24 @@ void loop() {
     grav.x = sensorValue.un.gravity.x;
     grav.y = sensorValue.un.gravity.y;
     grav.z = sensorValue.un.gravity.z;
+
+    qua = sensorValue.un.arvrStabilizedRV;
+
+    quaternionToEulerRV(&qua, &acc, &vec, &mat, &mat2);
+
+    Serial.print("x: ");
+    Serial.print(sensorValue.un.accelerometer.x); Serial.print("\t");
+    Serial.print("y: ");
+    Serial.print(sensorValue.un.accelerometer.y); Serial.print("\t");
+    Serial.print("z: ");
+    Serial.print(sensorValue.un.accelerometer.z); Serial.print("\t");
+    Serial.print("xr: ");
+    Serial.print(vec.xr);                        Serial.print("\t");
+    Serial.print("yr: ");
+    Serial.print(vec.yr);                        Serial.print("\t");
+    Serial.print("zr: ");
+    Serial.print(vec.zr);                        Serial.print("\t");
+    Serial.print(sensorValue.status);
         
     //printVec3("Unrotated acceleration vector", acc.x, acc.y, acc.z, true);
 
@@ -424,7 +520,7 @@ void loop() {
 #endif
 
 #if ENABLE_ACCELEROMETER
-    printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
+    //printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
 
     //printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
 
