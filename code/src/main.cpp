@@ -136,6 +136,7 @@ void BNOError(){
     //maybye flash the light to indicate errors?
 }
 
+//prints a vec3, what do you think?
 void printVec3(const char *vecName, float x, float y, float z, bool lineBreak) {
     Serial.print(vecName);
     Serial.print("\tx: ");
@@ -148,6 +149,7 @@ void printVec3(const char *vecName, float x, float y, float z, bool lineBreak) {
         Serial.println();
 }
 
+//prints a quaternion
 void printQuat(const char *quatName, float r, float i, float j, float k, bool lineBreak){
     Serial.print(quatName);
     Serial.print(",\tr: ");
@@ -162,7 +164,7 @@ void printQuat(const char *quatName, float r, float i, float j, float k, bool li
         Serial.println();
 }
 
-//The Hamilton Product, gracefully copied from wikipedia
+//The Hamilton Product, gracefully copied from wikipedia, equates to q1*q2
 quat multiply_quat(quat q1, quat q2) {
     float r = q1.R*q2.R + q1.I*q2.I + q1.J*q2.J + q1.K*q2.K;
     float i = q1.R*q2.I + q1.I*q2.R + q1.J*q2.K + q1.K*q2.J;
@@ -326,40 +328,51 @@ void loop() {
         SetReports();
     }
 
-    //get the BNO085 sensor data
-    if(!bno08x.getSensorEvent(&sensorValue)){
-        Serial.println("Could not get Sensor Values!");
-        return;
-    }
-
     acc.x = 0;
     acc.y = 0;
     acc.z = 0;
 
-    //the acceleration
-    acc.x=sensorValue.un.accelerometer.x;
-    acc.y=sensorValue.un.accelerometer.y;
-    acc.z=sensorValue.un.accelerometer.z;
-
-    //the rotation vector
-    rotVec.R = sensorValue.un.rotationVector.real;
-    rotVec.I = sensorValue.un.rotationVector.i;
-    rotVec.J = sensorValue.un.rotationVector.j;
-    rotVec.K = sensorValue.un.rotationVector.k;
-
-    //the gravity vector
-    grav.x = sensorValue.un.gravity.x;
-    grav.y = sensorValue.un.gravity.y;
-    grav.z = sensorValue.un.gravity.z;
-        
+    int i = 0;
+    //continuously poll the bno for data
+    while(bno08x.getSensorEvent(&sensorValue) && i<10){
+        i++;
+        switch(sensorValue.sensorId){
+            case SH2_ACCELEROMETER: {
+                //the acceleration
+                acc.x=sensorValue.un.accelerometer.x;
+                acc.y=sensorValue.un.accelerometer.y;
+                acc.z=sensorValue.un.accelerometer.z;
+                break;
+            }
+            case SH2_ROTATION_VECTOR: {
+                //the rotation vector
+                rotVec.R = sensorValue.un.rotationVector.real;
+                rotVec.I = sensorValue.un.rotationVector.i;
+                rotVec.J = sensorValue.un.rotationVector.j;
+                rotVec.K = sensorValue.un.rotationVector.k;
+                break;
+            }
+            case SH2_GRAVITY: {
+                //the gravity vector
+                grav.x = sensorValue.un.gravity.x;
+                grav.y = sensorValue.un.gravity.y;
+                grav.z = sensorValue.un.gravity.z;
+                break;
+            }
+            default:{
+                Serial.println("What?????");
+                break;
+            }
+        }
+    }        
     //printVec3("Unrotated acceleration vector", acc.x, acc.y, acc.z, true);
 
     //rotate the acceleration vector
     quat tempAcc = {0, acc.x, acc.y, acc.z};
-    tempAcc = multiply_quat(multiply_quat(invert_quat(rotVec), tempAcc), rotVec);
-    acc.x = tempAcc.I;
-    acc.y = tempAcc.J;
-    acc.z = tempAcc.K;
+    quat rotAcc = multiply_quat(multiply_quat(rotVec, tempAcc), invert_quat(rotVec));
+    acc.x = rotAcc.I;
+    acc.y = rotAcc.J;
+    acc.z = rotAcc.K;
 
 #endif
 
@@ -424,11 +437,11 @@ void loop() {
 #endif
 
 #if ENABLE_ACCELEROMETER
-    printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
+    //printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
 
     //printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
 
-    //printQuat("Rotation Vector", rotVec.real, rotVec.i, rotVec.j, rotVec.k, true);
+    printQuat("Rotation Vector", rotVec.R, rotVec.I, rotVec.J, rotVec.K, true);
 
     //printVec3("Rotated Acceleration", acc_.xr, vec.yr, vec.zr, true);
 /*
