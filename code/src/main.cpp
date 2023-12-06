@@ -334,7 +334,7 @@ void loop() {
 
     int i = 0;
     //continuously poll the bno for data
-    while(bno08x.getSensorEvent(&sensorValue) && i<10){
+    while(bno08x.getSensorEvent(&sensorValue)&&i<3){
         i++;
         switch(sensorValue.sensorId){
             case SH2_ACCELEROMETER: {
@@ -437,11 +437,11 @@ void loop() {
 #endif
 
 #if ENABLE_ACCELEROMETER
-    //printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
+    printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
 
     //printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
 
-    printQuat("Rotation Vector", rotVec.R, rotVec.I, rotVec.J, rotVec.K, true);
+    //printQuat("Rotation Vector", rotVec.R, rotVec.I, rotVec.J, rotVec.K, true);
 
     //printVec3("Rotated Acceleration", acc_.xr, vec.yr, vec.zr, true);
 /*
