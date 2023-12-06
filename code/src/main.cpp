@@ -344,7 +344,6 @@ void loop() {
     flight_data.alt = bmp.readAltitude(basePressure);
 #endif
 
-<<<<<<< HEAD
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
@@ -357,19 +356,6 @@ void loop() {
  {
       flight_data.flight_time = millis() - begin_flight_time;
  }
-=======
-    alt_index++;
-    presArr[alt_index%50] = flight_data.pres;
-    if (alt_index >=50)
-    {
-        flight_data.direction = approx_direction(presArr, basePressure); //will be called before state_of_flight in execution order.
-        if (flight_data.direction==0){
-            Serial.print("Error in direction approximation");
-        } else {
-            prevStage = state_of_flight_func(&flight_data, prevStage);
-        }
-    }
->>>>>>> 03e2faf78a26fff08d73c878f4d57e99cde54612
     emergency_chute(&flight_data, prevStage);
 
 
