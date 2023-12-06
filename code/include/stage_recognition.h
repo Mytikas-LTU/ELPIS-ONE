@@ -58,7 +58,10 @@ struct telemetry
   int parachute_state;
   float temp;
   float pres;
+  float base_pres;
+  long flight_time;
   long time;
+  long fall_time;
 };
 
 /**
@@ -67,7 +70,7 @@ struct telemetry
  * i is used as so called tick, a tick can be seen as a time-unit during the fligt
  * returns 0, only used when simulation should stop
  **/
-int gen_dummy_data(telemetry *telemetry, float i, int current_state);
+void gen_dummy_data(telemetry *telemetry, int i, int current_state);
 
 /**
  * function that declares rockets stage in flight
@@ -79,6 +82,6 @@ int state_of_flight_func(telemetry *telemetry, int previous_state);
 
 void emergency_chute(telemetry *flight_data,int previous_state);
 
-int approx_direction(float *presArr, float basePres );
+int approx_direction(float *presArr, telemetry *flight_data );
 
 #endif

@@ -8,10 +8,12 @@
 // Plug in SDA ==> GPIO4 (D2)
 
 #define ENABLE_BAROMETER 1
-#define ENABLE_ACCELEROMETER 1
+#define ENABLE_ACCELEROMETER 0
 #define ENABLE_CARDWRITER 1
 #define ENABLE_LOGGING 0
 #define ENABLE_SERVO 1
+#define ENABLE_DUMMYDATA 0
+
 
 #include <Wire.h>
 #include <SPI.h>
@@ -81,26 +83,10 @@ int alt_index = 0;
 float presArr[50];
 int prevStage = 1;
 struct telemetry flight_data;
+long begin_flight_time = 0;
+int in_flight = 0; 
 
-void rotation(float i, float j, float k, float r, rot_acc* vec, float x, float y, float z) {
-    float s = pow(-2,(sqrt((i*i)+(j*j)+(k*k)+(r*r))));
 
-    float r11 = 1-2*s*((j*j)+(k*k));
-    float r12 = 2*s*((i*i)*(j*j)-(k*k)*(r*r));
-    float r13 = 2*s*((i*i)*(k*k)+(j*j)*(r*r));
-
-    float r21 = 2*s*((i*i)*(j*j)+(k*k)*(r*r));
-    float r22 = 1-2*s*((i*i)+(k*k));
-    float r23 = 2*s*((j*j)*(k*k)-(i*i)*(r*r));
-
-    float r31 = 2*s*((i*i)*(k*k)-(j*j)*(r*r));
-    float r32 = 2*s*((j*j)*(k*k)+(i*i)*(r*r));
-    float r33 = 1-2*s*((i*i)+(j*j));
-
-    vec->xr=(r11*x+r12*y+r13*z);
-    vec->yr=(r21*x+r22*y+r23*z);
-    vec->zr=(r31*x+r32*y+r33*z);
-}
 /*
 void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, sh2_Accelerometer_t* accelerometer, vec3* vec) {
     rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
@@ -268,9 +254,9 @@ void setup() {
         digitalWrite(LED_PIN,LOW);
     }
     Serial.println();
-    basePressure = (pressures/pressureSamples)/100;
+    flight_data.base_pres = (pressures/pressureSamples)/100;
     Serial.print("Calibrated at ");
-    Serial.print(basePressure);
+    Serial.print(flight_data.base_pres);
     Serial.println(" hPa");
 #else
     Serial.println("Pressure calibration disabled");
@@ -327,7 +313,7 @@ void loop() {
     //read the sensor data
     switch(sensorValue.sensorId) {
         case SH2_ACCELEROMETER:
-            acc=sensorValue.un.accelerometer;
+           acc =sensorValue.un.accelerometer;
             break;
         case SH2_ROTATION_VECTOR:
             rotVec = sensorValue.un.rotationVector;
@@ -350,21 +336,22 @@ void loop() {
     flight_data.alt = bmp.readAltitude(basePressure);
 #endif
 
-    alt_index++;
-     presArr[alt_index%50] = flight_data.pres;
-    if (alt_index >=50)
-    {
-        flight_data.direction = approx_direction(presArr, basePressure); //will be called before state_of_flight in execution order.
-        if (flight_data.direction==0){
-            Serial.print("Error in direction approximation");
-        } else {
-            prevStage = state_of_flight_func(&flight_data, prevStage);
-        }
-    }
+#if ENABLE_DUMMYDATA
+    gen_dummy_data(&flight_data, alt_index, prevStage);
+#endif
+ if ((flight_data.pres - flight_data.base_pres*100) <= -120 && begin_flight_time == 0)
+ {
+    begin_flight_time = millis(); 
+    in_flight = 1;  
+ }
+ if (in_flight == 1)
+ {
+      flight_data.flight_time = millis() - begin_flight_time;
+ }
     emergency_chute(&flight_data, prevStage);
 
     ptr += 1;
-    file.println(pres);
+    //file.println(flight_data.pres);
     if(ptr >= 800) {
         digitalWrite(CARD_LED_PIN,HIGH);
 #if ENABLE_LOGGING
@@ -387,29 +374,34 @@ void loop() {
     }
 #endif
 
-#if ENABLE_BAROMETER
-    Serial.print(flight_data.temp);
-    Serial.print(" *C, ");
+#if ENABLE_BAROMETER || ENABLE_DUMMYDATA
 
-    Serial.print(flight_data.pres);
+   Serial.print(flight_data.pres - flight_data.base_pres*100);
     Serial.print(" Pa, ");
 
-    Serial.print(flight_data.alt);
-    Serial.print(" m, ");
 
-    Serial.print(flight_data.alt-oldalt);
-    Serial.print(" m/s, ");
+   // Serial.print("State of flight,");
+   // Serial.print(prevStage);
 
-    oldalt = alt;
+    Serial.print("Parachute:");
+    Serial.print(flight_data.parachute_state);
+    Serial.print(", ");
+
+    Serial.print(flight_data.flight_time);
+    Serial.print("ms, ");
+
+    
+
+    oldalt = flight_data.alt;
 
 #endif
 
-#if ENABLE_ACCELEROMETER
-    printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
-
-    printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
-
-    printQuat("Rotation Vector", rotVec.real, rotVec.i, rotVec.j, rotVec.k, true);
+#if ENABLE_ACCELEROMETER 
+   // printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
+//
+   // printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
+//
+   // printQuat("Rotation Vector", rotVec.real, rotVec.i, rotVec.j, rotVec.k, true);
 
     //printVec3("Rotated Acceleration", acc_.xr, vec.yr, vec.zr, true);
 /*
@@ -419,6 +411,8 @@ void loop() {
     Serial.print(vec.yr);                        Serial.print("\t");
     Serial.print("zr: ");
     Serial.print(vec.zr);                        Serial.print("\t");*/
+
+    
 #endif
 
     Serial.println();
