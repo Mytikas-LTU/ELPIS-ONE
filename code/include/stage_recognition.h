@@ -44,24 +44,26 @@ struct quat
 
 struct telemetry
 {
-  vec3 acc;
+  char foo = 'c';
 
-  vec3 rot_acc;
+//  vec3 acc;
 
-  vec3 grav;
+//  vec3 rot_acc;
 
-  quat rot;
+//  vec3 grav;
 
-  float acc_globZ;
+//  quat rot;
+
   int direction;
   float alt;
   int parachute_state;
-  float temp;
+  float temp ;
   float pres;
   float base_pres;
   long flight_time;
   long time;
-  long fall_time;
+  float acc_globZ;
+  char bar = 'b';
 };
 
 /**

@@ -155,17 +155,20 @@ void printQuat(char *quatName, float r, float i, float j, float k, bool lineBrea
 }
 
 void setup() {
+    long int boottime = millis();
     float pressures = 0;
     pinMode(LED_PIN,OUTPUT);
-    pinMode(LAUNCH_LED_PIN,OUTPUT);
     pinMode(ERROR_LED_PIN,OUTPUT);
+    pinMode(LAUNCH_LED_PIN,OUTPUT);
     pinMode(CARD_LED_PIN,OUTPUT);
     digitalWrite(LAUNCH_LED_PIN,LOW);
     digitalWrite(ERROR_LED_PIN,LOW);
     Serial.begin(9600);
-    while (!Serial) {
+
+    while (!Serial && millis() - boottime < 10000) {
         yield();
     }
+
     Serial.println("Begin boot process");
     flash(3);
     delay(flashTime*3);
@@ -287,6 +290,9 @@ void setup() {
     Serial.println("Servo disabled");
 #endif
     digitalWrite(LAUNCH_LED_PIN,HIGH);
+
+    flight_data.acc_globZ = 0.1;
+
 }
 
 void loop() {
@@ -294,6 +300,8 @@ void loop() {
           alt,
           pres;
     digitalWrite(LED_PIN,HIGH);
+
+    flight_data.time = millis();
 
 #if ENABLE_ACCELEROMETER
     sh2_Accelerometer_t acc, grav;
@@ -336,6 +344,7 @@ void loop() {
     flight_data.alt = bmp.readAltitude(basePressure);
 #endif
 
+<<<<<<< HEAD
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
@@ -348,22 +357,34 @@ void loop() {
  {
       flight_data.flight_time = millis() - begin_flight_time;
  }
+=======
+    alt_index++;
+    presArr[alt_index%50] = flight_data.pres;
+    if (alt_index >=50)
+    {
+        flight_data.direction = approx_direction(presArr, basePressure); //will be called before state_of_flight in execution order.
+        if (flight_data.direction==0){
+            Serial.print("Error in direction approximation");
+        } else {
+            prevStage = state_of_flight_func(&flight_data, prevStage);
+        }
+    }
+>>>>>>> 03e2faf78a26fff08d73c878f4d57e99cde54612
     emergency_chute(&flight_data, prevStage);
 
+
+#if ENABLE_LOGGING
     ptr += 1;
     //file.println(flight_data.pres);
     if(ptr >= 800) {
         digitalWrite(CARD_LED_PIN,HIGH);
-#if ENABLE_LOGGING
 //        file.write(&floatBuffer, (size_t)ptr);
         file.flush();
         Serial.println("Written to file!");
-#else
-        Serial.println("(simulated) Written to file!");
-#endif
         ptr = 0;
         digitalWrite(CARD_LED_PIN,LOW);
     }
+#endif
 
 #if ENABLE_SERVO
     if(flight_data.parachute_state == 1){
@@ -414,6 +435,13 @@ void loop() {
 
     
 #endif
+    Serial.print("struct-string is: [");
+    Serial.print((char *) &flight_data);
+    Serial.print("], len: ");
+    Serial.print(strlen((char *) &flight_data));
+    Serial.println(" chars");
+
+
 
     Serial.println();
     // constant time loop
