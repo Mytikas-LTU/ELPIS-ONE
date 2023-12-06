@@ -269,7 +269,7 @@ void setup() {
     file.print("Sample rate: ");
     file.print(sampleRate);
     file.print(" Base pressure: ");
-    file.println(basePressure);
+    file.println(flight_data.base_pres);
     file.flush();
     flash(4);
     digitalWrite(LED_PIN,LOW);
@@ -299,6 +299,7 @@ void loop() {
     float temp,
           alt,
           pres;
+    int written;
     digitalWrite(LED_PIN,HIGH);
 
     flight_data.time = millis();
@@ -349,8 +350,8 @@ void loop() {
 #endif
  if ((flight_data.pres - flight_data.base_pres*100) <= -120 && begin_flight_time == 0)
  {
-    begin_flight_time = millis(); 
-    in_flight = 1;  
+    begin_flight_time = millis();
+    in_flight = 1;
  }
  if (in_flight == 1)
  {
@@ -361,8 +362,9 @@ void loop() {
 
 #if ENABLE_LOGGING
     ptr += 1;
+    written = file.write((byte *) &flight_data, sizeof(flight_data));
     //file.println(flight_data.pres);
-    if(ptr >= 800) {
+    if(ptr >= 80) {
         digitalWrite(CARD_LED_PIN,HIGH);
 //        file.write(&floatBuffer, (size_t)ptr);
         file.flush();
@@ -421,12 +423,9 @@ void loop() {
 
     
 #endif
-    Serial.print("struct-string is: [");
-    Serial.print((char *) &flight_data);
-    Serial.print("], len: ");
-    Serial.print(strlen((char *) &flight_data));
-    Serial.println(" chars");
-
+    Serial.println();
+    Serial.print(written);
+    Serial.println(" bytes to file write-buffer");
 
 
     Serial.println();

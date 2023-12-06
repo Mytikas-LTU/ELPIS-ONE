@@ -44,7 +44,6 @@ struct quat
 
 struct telemetry
 {
-  char foo = 'c';
 
 //  vec3 acc;
 
@@ -63,7 +62,6 @@ struct telemetry
   long flight_time;
   long time;
   float acc_globZ;
-  char bar = 'b';
 };
 
 /**

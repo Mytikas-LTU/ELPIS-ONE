@@ -78,7 +78,7 @@ int state_of_flight_func(telemetry *flight_data, int previous_state)
   else if (((previous_state == slow_ascent) + (flight_data->direction == 2) + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state)) >= 3)
     return quick_descent;
   else if (((previous_state == quick_descent) + (flight_data->direction == 2)  + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state))) // parachute released, quick_descent -> slow_descent
-    if (flight_data->fall_time - flight_data->time >= 1.5 )
+    if (flight_data->flight_time - flight_data->time >= 1.5 )
     {
       flight_data->parachute_state = 1;
       // release parachute;
