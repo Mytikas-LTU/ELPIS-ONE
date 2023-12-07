@@ -48,8 +48,6 @@ struct telemetry
 
   vec3 rot_acc;
 
-  vec3 grav;
-
   quat rot;
 
   float acc_globZ;

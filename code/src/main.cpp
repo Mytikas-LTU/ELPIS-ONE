@@ -75,6 +75,8 @@ int alt_index = 0;
 float presArr[50];
 int prevStage = 1;
 struct telemetry flight_data;
+vec3 acc;
+quat rot;
 
 void rotation(float i, float j, float k, float r, vec3* vec, float x, float y, float z) {
     float s = pow(-2,(sqrt((i*i)+(j*j)+(k*k)+(r*r))));
@@ -122,10 +124,6 @@ bool SetReports() {
     }
     if(!bno08x.enableReport(SH2_ACCELEROMETER, 1000000/sampleRate)) {
         Serial.println("Could not enable accelerometer reports!");
-        return false;
-    }
-    if(!bno08x.enableReport(SH2_GRAVITY, 1000000/sampleRate)) {
-        Serial.println("Could not enable gravity reports!");
         return false;
     }
     return true;
@@ -320,59 +318,72 @@ void loop() {
     digitalWrite(LED_PIN,HIGH);
 
 #if ENABLE_ACCELEROMETER
-    vec3 acc, grav;
-    quat rotVec;
-
     if(bno08x.wasReset()) {
         Serial.println("BNO085 was reset");
         SetReports();
     }
 
-    acc.x = 0;
-    acc.y = 0;
-    acc.z = 0;
+    vec3 tacc;
+    tacc.x = 0.0;
+    tacc.y = 0.0;
+    tacc.z = 0.0;
+
+    quat trot;
+    trot.R = 0.0;
+    trot.I = 0.0;
+    trot.J = 0.0;
+    trot.K = 0.0;
 
     int i = 0;
     //continuously poll the bno for data
-    while(bno08x.getSensorEvent(&sensorValue)&&i<3){
+    while(bno08x.getSensorEvent(&sensorValue)&&i<36){
         i++;
-        switch(sensorValue.sensorId){
-            case SH2_ACCELEROMETER: {
-                //the acceleration
-                acc.x=sensorValue.un.accelerometer.x;
-                acc.y=sensorValue.un.accelerometer.y;
-                acc.z=sensorValue.un.accelerometer.z;
-                break;
-            }
-            case SH2_ROTATION_VECTOR: {
-                //the rotation vector
-                rotVec.R = sensorValue.un.rotationVector.real;
-                rotVec.I = sensorValue.un.rotationVector.i;
-                rotVec.J = sensorValue.un.rotationVector.j;
-                rotVec.K = sensorValue.un.rotationVector.k;
-                break;
-            }
-            case SH2_GRAVITY: {
-                //the gravity vector
-                grav.x = sensorValue.un.gravity.x;
-                grav.y = sensorValue.un.gravity.y;
-                grav.z = sensorValue.un.gravity.z;
-                break;
-            }
-            default:{
-                Serial.println("What?????");
-                break;
-            }
+        if(sensorValue.sensorId==SH2_ACCELEROMETER) {
+            tacc.x=sensorValue.un.accelerometer.x;
+            tacc.y=sensorValue.un.accelerometer.y;
+            tacc.z=sensorValue.un.accelerometer.z;
         }
-    }        
+        if(sensorValue.sensorId==SH2_ROTATION_VECTOR) {
+            //It would appear that the bno sends the data in the wrong order. Source: Trust me bro
+            trot.K = sensorValue.un.rotationVector.real;
+            trot.J = sensorValue.un.rotationVector.i;
+            trot.I = sensorValue.un.rotationVector.j;
+            trot.R = sensorValue.un.rotationVector.k;
+        }
+    }
+
+    if(tacc.x == 0.0 && tacc.y == 0.0 && tacc.z == 0.0){
+        tacc.x = acc.x;
+        tacc.y = acc.y;
+        tacc.z = acc.z;
+    }
+    if(trot.R == 0.0 && trot.I == 0.0 && trot.J == 0.0 && trot.K == 0.0){
+        trot.R = rot.R;
+        trot.I = rot.I;
+        trot.J = rot.J;
+        trot.K = rot.K;
+    }
+
+    acc.x = tacc.x;
+    acc.y = tacc.y;
+    acc.z = tacc.z;
+
+    rot.R = trot.R;
+    rot.I = trot.I;
+    rot.J = trot.J;
+    rot.K = trot.K;
+
+    flight_data.acc = acc;
+    flight_data.rot = rot;
     //printVec3("Unrotated acceleration vector", acc.x, acc.y, acc.z, true);
 
     //rotate the acceleration vector
     quat tempAcc = {0, acc.x, acc.y, acc.z};
-    quat rotAcc = multiply_quat(multiply_quat(rotVec, tempAcc), invert_quat(rotVec));
-    acc.x = rotAcc.I;
-    acc.y = rotAcc.J;
-    acc.z = rotAcc.K;
+    quat rotAcc = multiply_quat(multiply_quat(rot, tempAcc), invert_quat(rot));
+    vec3 racc;
+    racc.x = rotAcc.I;
+    racc.y = rotAcc.J;
+    racc.z = rotAcc.K;
 
 #endif
 
@@ -437,13 +448,13 @@ void loop() {
 #endif
 
 #if ENABLE_ACCELEROMETER
-    printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
+    //printVec3("Acceleration vector", tacc.x, tacc.y, tacc.z, true);
 
     //printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
 
-    //printQuat("Rotation Vector", rotVec.R, rotVec.I, rotVec.J, rotVec.K, true);
+    //printQuat("Rotation Vector", trot.R, trot.I, trot.J, trot.K, true);
 
-    //printVec3("Rotated Acceleration", acc_.xr, vec.yr, vec.zr, true);
+    printVec3("Rotated Acceleration", racc.x, racc.y, racc.z, true);
 /*
     Serial.print("xr: ");
     Serial.print(vec.xr);                        Serial.print("\t");
