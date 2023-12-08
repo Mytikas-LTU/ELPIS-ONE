@@ -44,14 +44,20 @@ struct quat
 
 struct telemetry
 {
-
+  //the LOCAL acceleration of the rocket
   vec3 acc;
 
   // vec3 rotAcc
 
+  //the orientation of the rocket
   quat rot;
 
-  bool bnoReset = false;
+  //did the bno reset this iteration?
+  bool bnoReset;
+  //A bitmask for missed readings withe bno. A 1 in the first place means 
+  //we missed acc, and in the second place means a missed rot reading
+  int bnoMissed;
+
   int direction;
   float alt;
   int parachute_state;

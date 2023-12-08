@@ -126,28 +126,30 @@ void BNOError(){
     //maybye flash the light to indicate errors?
 }
 
-void printVec3(char *vecName, float x, float y, float z, bool lineBreak) {
+//prints a vec3 to serial. Was this comment necessary? probably not
+void printVec3(char *vecName, vec3 vec, bool lineBreak) {
     Serial.print(vecName);
     Serial.print("\tx: ");
-    Serial.print(x);
+    Serial.print(vec.x);
     Serial.print(",\ty: ");
-    Serial.print(y);
+    Serial.print(vec.y);
     Serial.print(",\tz: ");
-    Serial.print(z);
+    Serial.print(vec.z);
     if(lineBreak)
         Serial.println();
 }
 
-void printQuat(char *quatName, float r, float i, float j, float k, bool lineBreak){
+//print a quaternion to Serial. Do I really need to explain these
+void printQuat(char *quatName, quat _quat, bool lineBreak){
     Serial.print(quatName);
     Serial.print(",\tr: ");
-    Serial.print(r);
+    Serial.print(_quat.R);
     Serial.print(",\ti: ");
-    Serial.print(i);
+    Serial.print(_quat.I);
     Serial.print(",\tj: ");
-    Serial.print(j);
+    Serial.print(_quat.J);
     Serial.print(",\tk: ");
-    Serial.print(k);
+    Serial.print(_quat.K);
     if(lineBreak)
         Serial.println();
 }
@@ -304,9 +306,11 @@ void loop() {
     flight_data.time = millis();
 
 #if ENABLE_ACCELEROMETER
+    //temporary variables to handle missed readings
     vec3 tacc = {0.0,0.0,0.0};
     quat trot = {0.0,0.0,0.0,0.0};
 
+    flight_data.bnoReset = false;
     if(bno08x.wasReset()) {
         Serial.println("BNO085 was reset");
         SetReports();
@@ -331,13 +335,14 @@ void loop() {
 
     //the next section will probably work, as testing shows that data loss occurs really infrequently
     //if we didnt recieve any data, use the one stored from last iteration
+    flight_data.bnoMissed = 0;
     if(tacc.x ==0.0 && tacc.y == 0.0 && tacc.z == 0.0){
         tacc = acc;
-        Serial.println("Missed acc");
+        flight_data.bnoMissed |= 0b1;
     }
     if(trot.I == 0.0 &&trot.K == 0.0 &&trot.J == 0.0 &&trot.R == 0.0){
-        Serial.println("Missed rot");
         trot = rot;
+        flight_data.bnoMissed |= 0b10;
     }
 
     //store the data of the current iteration
@@ -415,9 +420,9 @@ void loop() {
 #endif
 
 #if ENABLE_ACCELEROMETER 
-    //printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
+    //printVec3("Acceleration vector", acc, true);
 
-    //printQuat("Rotation Vector", rot.R, rot.I, rot.J, rot.K, true);
+    //printQuat("Rotation Vector", rot, true);
 
     //printVec3("Rotated Acceleration", acc_.xr, vec.yr, vec.zr, true);
 /*
