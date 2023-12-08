@@ -45,14 +45,13 @@ struct quat
 struct telemetry
 {
 
-//  vec3 acc;
+  vec3 acc;
 
-//  vec3 rot_acc;
+  // vec3 rotAcc
 
-//  vec3 grav;
+  quat rot;
 
-//  quat rot;
-
+  bool bnoReset = false;
   int direction;
   float alt;
   int parachute_state;

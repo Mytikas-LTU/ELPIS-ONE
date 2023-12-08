@@ -7,11 +7,11 @@
 // Plug in SCK ==> GPIO5 (D1)
 // Plug in SDA ==> GPIO4 (D2)
 
-#define ENABLE_BAROMETER 1
-#define ENABLE_ACCELEROMETER 0
-#define ENABLE_CARDWRITER 1
+#define ENABLE_BAROMETER 0
+#define ENABLE_ACCELEROMETER 1
+#define ENABLE_CARDWRITER 0
 #define ENABLE_LOGGING 0
-#define ENABLE_SERVO 1
+#define ENABLE_SERVO 0
 #define ENABLE_DUMMYDATA 0
 
 
@@ -85,6 +85,8 @@ int prevStage = 1;
 struct telemetry flight_data;
 long begin_flight_time = 0;
 int in_flight = 0; 
+vec3 acc;
+quat rot;
 
 
 /*
@@ -114,10 +116,6 @@ bool SetReports() {
     }
     if(!bno08x.enableReport(SH2_ACCELEROMETER)) {
         Serial.println("Could not enable accelerometer reports!");
-        return false;
-    }
-    if(!bno08x.enableReport(SH2_GRAVITY)) {
-        Serial.println("Could not enable gravity reports!");
         return false;
     }
     return true;
@@ -174,6 +172,7 @@ void setup() {
     delay(flashTime*3);
 
 #if ENABLE_ACCELEROMETER
+    delay(1000);
     Serial.println("Init BNO085!");
     while(!bno08x.begin_I2C()) {
         Serial.println("BNO error");
@@ -305,38 +304,48 @@ void loop() {
     flight_data.time = millis();
 
 #if ENABLE_ACCELEROMETER
-    sh2_Accelerometer_t acc, grav;
-    sh2_RotationVectorWAcc_t rotVec;
+    vec3 tacc = {0.0,0.0,0.0};
+    quat trot = {0.0,0.0,0.0,0.0};
 
     if(bno08x.wasReset()) {
         Serial.println("BNO085 was reset");
         SetReports();
+        flight_data.bnoReset = true;
     }
 
     //get the BNO085 sensor data
-    if(!bno08x.getSensorEvent(&sensorValue)){
-        Serial.println("Could not get Sensor Values!");
-        return;
+    while(bno08x.getSensorEvent(&sensorValue)){
+        if(sensorValue.sensorId == SH2_ACCELEROMETER) {
+            tacc.x = sensorValue.un.accelerometer.x;
+            tacc.y = sensorValue.un.accelerometer.y;
+            tacc.z = sensorValue.un.accelerometer.z;
+        }
+        if(sensorValue.sensorId == SH2_ROTATION_VECTOR){
+            //you might think this is wrong, but trust me, the vector is messed up. DAMN AND BLAST THE AUTHORS OF THE BNO08X LIBRARY!! actually nvm they fixed it
+            trot.R = sensorValue.un.rotationVector.real;
+            trot.I = sensorValue.un.rotationVector.i;
+            trot.J = sensorValue.un.rotationVector.j;
+            trot.K = sensorValue.un.rotationVector.k;
+        }
     }
 
-    //read the sensor data
-    switch(sensorValue.sensorId) {
-        case SH2_ACCELEROMETER:
-           acc =sensorValue.un.accelerometer;
-            break;
-        case SH2_ROTATION_VECTOR:
-            rotVec = sensorValue.un.rotationVector;
-            break;
-        case SH2_GRAVITY:
-            grav = sensorValue.un.gravity;
-            break;
-        /*case SH2_ARVR_STABILIZED_RV:
-            quaternionToEulerRV(&sensorValue.un.arvrStabilizedRV, &sensorValue.un.accelerometer, &vec);
-        case SH2_GYRO_INTEGRATED_RV:
-             faster (more noise?)
-            quaternionToEulerGI(&sensorValue.un.gyroIntegratedRV, &sensorValue.un.accelerometer, &vec);
-            break; */
+    //the next section will probably work, as testing shows that data loss occurs really infrequently
+    //if we didnt recieve any data, use the one stored from last iteration
+    if(tacc.x ==0.0 && tacc.y == 0.0 && tacc.z == 0.0){
+        tacc = acc;
+        Serial.println("Missed acc");
     }
+    if(trot.I == 0.0 &&trot.K == 0.0 &&trot.J == 0.0 &&trot.R == 0.0){
+        Serial.println("Missed rot");
+        trot = rot;
+    }
+
+    //store the data of the current iteration
+    acc = tacc;
+    rot = trot;
+
+    flight_data.acc = acc;
+    flight_data.rot = rot;
 #endif
 
 #if ENABLE_BAROMETER
@@ -348,15 +357,15 @@ void loop() {
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
- if ((flight_data.pres - flight_data.base_pres*100) <= -120 && begin_flight_time == 0)
- {
-    begin_flight_time = millis();
-    in_flight = 1;
- }
- if (in_flight == 1)
- {
-      flight_data.flight_time = millis() - begin_flight_time;
- }
+    if ((flight_data.pres - flight_data.base_pres*100) <= -120 && begin_flight_time == 0)
+    {
+       begin_flight_time = millis();
+       in_flight = 1;
+    }
+    if (in_flight == 1)
+    {
+        flight_data.flight_time = millis() - begin_flight_time;
+    }
     emergency_chute(&flight_data, prevStage);
 
 
@@ -406,11 +415,9 @@ void loop() {
 #endif
 
 #if ENABLE_ACCELEROMETER 
-   // printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
-//
-   // printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
-//
-   // printQuat("Rotation Vector", rotVec.real, rotVec.i, rotVec.j, rotVec.k, true);
+    //printVec3("Acceleration vector", acc.x, acc.y, acc.z, true);
+
+    //printQuat("Rotation Vector", rot.R, rot.I, rot.J, rot.K, true);
 
     //printVec3("Rotated Acceleration", acc_.xr, vec.yr, vec.zr, true);
 /*
