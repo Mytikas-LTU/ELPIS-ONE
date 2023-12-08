@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "stage_recognition.h"
-#define Enable_DummyData 1
+#define Enable_DummyData 0
 
 
 // function that generates values for acc, vel and height to check against stage_recognition
@@ -64,20 +64,19 @@ int approx_direction(float *presArr, telemetry *flight_data ){
 
 int state_of_flight_func(telemetry *flight_data, int previous_state)
 {
-  
-  if (((previous_state == launch_pad) + (flight_data->direction == 3) + (-1 < flight_data->acc_globZ && flight_data->acc_globZ < 1) + (!flight_data->parachute_state)) >= 3 )
+  if (((previous_state == launch_pad) && (flight_data->direction == 3) && (!flight_data->parachute_state)))
     return launch_pad;
-  else if (((previous_state == launch_pad) + (flight_data->acc_globZ > 10) + (!flight_data->parachute_state)) >= 2)
+  else if (((previous_state == launch_pad) && (!flight_data->parachute_state)))
     return quick_ascent;
-  else if (((previous_state == quick_ascent) +  (flight_data->acc_globZ >= 0) + (!flight_data->parachute_state)) >= 2 )
+  else if (((previous_state == quick_ascent) && (!flight_data->parachute_state)))
     return quick_ascent;
-  else if (((previous_state == quick_ascent) + ((flight_data->direction ==1) > 0) + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state)) >= 3)
+  else if (((previous_state == quick_ascent) && ((flight_data->direction ==1) > 0) && (!flight_data->parachute_state)))
     return slow_ascent;
-  else if (((previous_state == slow_ascent) +  (flight_data->direction ==1) + (flight_data->acc_globZ < 0) +  (!flight_data->parachute_state)) >=3)
+  else if (((previous_state == slow_ascent) &&  (flight_data->direction ==1) &&  (!flight_data->parachute_state)))
     return slow_ascent;
-  else if (((previous_state == slow_ascent) + (flight_data->direction == 2) + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state)) >= 3)
+  else if (((previous_state == slow_ascent) && (flight_data->direction == 2) && (!flight_data->parachute_state)))
     return quick_descent;
-  else if (((previous_state == quick_descent) + (flight_data->direction == 2)  + (flight_data->acc_globZ < 0) + (!flight_data->parachute_state))) // parachute released, quick_descent -> slow_descent
+  else if (((previous_state == quick_descent) && (flight_data->direction == 2)  && (!flight_data->parachute_state))){ // parachute released, quick_descent -> slow_descent
     if (flight_data->flight_time - flight_data->time >= 1.5 )
     {
       flight_data->parachute_state = 1;
@@ -85,16 +84,16 @@ int state_of_flight_func(telemetry *flight_data, int previous_state)
        return slow_descent;
     }
     else{return quick_descent;}
-  else if (((previous_state == slow_descent)  + (flight_data->direction == 2) + (flight_data->acc_globZ < 0) + (flight_data->parachute_state)) >= 3)
+  }
+  else if (((previous_state == slow_descent)  && (flight_data->direction == 2) && (flight_data->parachute_state)))
     return slow_descent;
-  else if (((previous_state == slow_descent) + (flight_data->direction == 3) + (-1 < flight_data->acc_globZ && flight_data->acc_globZ < 1) + (flight_data->parachute_state)) >=3)
+  else if (((previous_state == slow_descent) && (flight_data->direction == 3) && (flight_data->parachute_state)))
     return touch_down;
   else if (previous_state == touch_down)
     return touch_down;
   else
     return FALSE; // error
 }
-
 
 void emergency_chute(telemetry *flight_data, int previous_state)
 {
