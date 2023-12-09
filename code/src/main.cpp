@@ -7,7 +7,7 @@
 #define ENABLE_BAROMETER 1
 #define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 1
-#define ENABLE_LOGGING 1
+#define ENABLE_LOGGING 0
 #define ENABLE_SERVO 1
 #define ENABLE_DUMMYDATA 0
 
@@ -98,7 +98,7 @@ void flash(int times) {
 //sets all the sensor outputs to recieve
 //for more information on the sh2 sensorValues refer to the sh2 reference manual(downloaded in docs folder)
 bool SetReports() {
-    if(!bno08x.enableReport(SH2_ROTATION_VECTOR)) {
+    if(!bno08x.enableReport(SH2_ARVR_STABILIZED_RV)) {
         Serial.println("Could not enable rotation vector reports!");
         return false;
     }
@@ -310,12 +310,12 @@ void loop() {
             tacc.y = sensorValue.un.accelerometer.y;
             tacc.z = sensorValue.un.accelerometer.z;
         }
-        if(sensorValue.sensorId == SH2_ROTATION_VECTOR){
+        if(sensorValue.sensorId == SH2_ARVR_STABILIZED_RV){
             //you might think this is wrong, but trust me, the vector is messed up. DAMN AND BLAST THE AUTHORS OF THE BNO08X LIBRARY!! actually nvm they fixed it
-            trot.R = sensorValue.un.rotationVector.real;
-            trot.I = sensorValue.un.rotationVector.i;
-            trot.J = sensorValue.un.rotationVector.j;
-            trot.K = sensorValue.un.rotationVector.k;
+            trot.R = sensorValue.un.arvrStabilizedRV.real;
+            trot.I = sensorValue.un.arvrStabilizedRV.i;
+            trot.J = sensorValue.un.arvrStabilizedRV.j;
+            trot.K = sensorValue.un.arvrStabilizedRV.k;
         }
     }
 
@@ -406,9 +406,9 @@ void loop() {
 #endif
 
 #if ENABLE_ACCELEROMETER 
-    //printVec3("Acceleration vector", acc, true);
+    printVec3("Acceleration vector", acc, true);
 
-    //printQuat("Rotation Vector", rot, true);
+    printQuat("Rotation Vector", rot, true);
 
     //printVec3("Rotated Acceleration", acc_.xr, vec.yr, vec.zr, true);
 /*
