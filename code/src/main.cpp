@@ -1,11 +1,8 @@
 /***************************************************************************
-    Author: Auri Åhs
-    Simple telemetry using only a barometer
-    Testing is underway with integrating the accelerometer
-    REMEMBER TO ENABLE WRITING TO THE SD-CARD BEFORE LAUNCH
+    Author: Aurora Å, Isak H, Elias R, Alexander B
+    Full telemetry and logging suite.
  ***************************************************************************/
-// Plug in SCK ==> GPIO5 (D1)
-// Plug in SDA ==> GPIO4 (D2)
+
 
 #define ENABLE_BAROMETER 1
 #define ENABLE_ACCELEROMETER 1
@@ -89,15 +86,6 @@ vec3 acc;
 quat rot;
 
 
-/*
-void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, sh2_Accelerometer_t* accelerometer, vec3* vec) {
-    rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
-}
-
-void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, sh2_Accelerometer_t* accelerometer, vec3* vec) {
-    rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
-}
-*/
 void flash(int times) {
     for (int i = 0; i<times; i++) {
         digitalWrite(LED_PIN,HIGH);
@@ -292,8 +280,6 @@ void setup() {
 #endif
     digitalWrite(LAUNCH_LED_PIN,HIGH);
 
-    flight_data.acc_globZ = 0.1;
-
 }
 
 void loop() {
@@ -435,10 +421,10 @@ void loop() {
 
     
 #endif
-    Serial.println();
+/*    Serial.println();
     Serial.print(written);
     Serial.println(" bytes to file write-buffer");
-
+*/
 
     Serial.println();
     // constant time loop
