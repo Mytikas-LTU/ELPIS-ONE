@@ -97,7 +97,7 @@ int state_of_flight_func(telemetry *flight_data, int previous_state)
 
 void emergency_chute(telemetry *flight_data, int previous_state)
 {
-   if (flight_data->flight_time >= 15000 && flight_data->parachute_state == 0)
+   if (flight_data->flight_time >= 12000 && flight_data->parachute_state == 0)
    {
       flight_data->parachute_state = 1;
    }
