@@ -7,7 +7,7 @@
 #define ENABLE_BAROMETER 1
 #define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 1
-#define ENABLE_LOGGING 0
+#define ENABLE_LOGGING 1
 #define ENABLE_SERVO 1
 #define ENABLE_DUMMYDATA 0
 
@@ -81,7 +81,7 @@ float presArr[50];
 int prevStage = 1;
 struct telemetry flight_data;
 long begin_flight_time = 0;
-int in_flight = 0; 
+int in_flight = 0;
 vec3 acc;
 quat rot;
 
@@ -153,13 +153,23 @@ void setup() {
     digitalWrite(ERROR_LED_PIN,LOW);
     Serial.begin(9600);
 
-    while (!Serial && millis() - boottime < 10000) {
+    while (!Serial && millis() - boottime < 2000) {
         yield();
     }
 
     Serial.println("Begin boot process");
     flash(3);
     delay(flashTime*3);
+
+#if ENABLE_SERVO
+    Serial.println("Enabling servo");
+    shuteServo.attach(9);
+    shuteServo.write(SERVO_OPEN);
+    Serial.println("Servo in OPEN position");
+#else
+    Serial.println("Servo disabled");
+#endif
+
 
 #if ENABLE_ACCELEROMETER
     delay(1000);
@@ -268,15 +278,8 @@ void setup() {
 #endif
 
 #if ENABLE_SERVO
-    Serial.println("Enabling servo");
-    shuteServo.attach(9);
-    shuteServo.write(SERVO_OPEN);
-    Serial.println("Servo in OPEN position");
-    delay(5000);
     shuteServo.write(SERVO_LOCKED);
     Serial.println("Servo in LOCKED position");
-#else
-    Serial.println("Servo disabled");
 #endif
     digitalWrite(LAUNCH_LED_PIN,HIGH);
 
@@ -360,6 +363,7 @@ void loop() {
     }
     if (in_flight == 1)
     {
+        digitalWrite(CARD_LED_PIN,HIGH);
         flight_data.flight_time = millis() - begin_flight_time;
     }
     emergency_chute(&flight_data, prevStage);
