@@ -312,10 +312,10 @@ void loop() {
         }
         if(sensorValue.sensorId == SH2_ARVR_STABILIZED_RV){
             //you might think this is wrong, but trust me, the vector is messed up. DAMN AND BLAST THE AUTHORS OF THE BNO08X LIBRARY!! actually nvm they fixed it
-            trot.R = sensorValue.un.arvrStabilizedRV.real;
-            trot.I = sensorValue.un.arvrStabilizedRV.i;
-            trot.J = sensorValue.un.arvrStabilizedRV.j;
-            trot.K = sensorValue.un.arvrStabilizedRV.k;
+            trot.R = sensorValue.un.rotationVector.real;
+            trot.I = sensorValue.un.rotationVector.i;
+            trot.J = sensorValue.un.rotationVector.j;
+            trot.K = sensorValue.un.rotationVector.k;
         }
     }
 
@@ -348,8 +348,13 @@ void loop() {
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
-    if ((flight_data.pres - flight_data.base_pres*100) <= -120 && begin_flight_time == 0)
+    if (flight_data.acc.x < -12.00 && begin_flight_time == 0)
     {
+        Serial.println("begin flight!!----------------------------------------");
+        Serial.println("begin flight!!----------------------------------------");
+        Serial.println("begin flight!!----------------------------------------");
+        Serial.println("begin flight!!----------------------------------------");
+        Serial.println("begin flight!!----------------------------------------");
        begin_flight_time = millis();
        in_flight = 1;
     }
