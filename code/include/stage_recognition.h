@@ -45,27 +45,28 @@ struct quat
 struct telemetry
 {
   //the LOCAL acceleration of the rocket
-  vec3 acc;
+  vec3 acc;              // 3*4 bytes
 
   // vec3 rotAcc
 
   //the orientation of the rocket
-  quat rot;
+  quat rot;              // 4*4 bytes
 
   //did the bno reset this iteration?
-  bool bnoReset;
+  bool bnoReset;         // 1 (+3 nulls due to alignment) bytes
   //A bitmask for missed readings withe bno. A 1 in the first place means 
   //we missed acc, and in the second place means a missed rot reading
-  int bnoMissed;
+  int bnoMissed;         // 4 bytes
 
-  int direction;
-  float alt;
-  int parachute_state;
-  float temp ;
-  float pres;
-  float base_pres;
-  long flight_time;
-  long time;
+  int direction;         // 4 bytes
+  float alt;             // 4 bytes
+  int parachute_state;   // 4 bytes
+  float temp;            // 4 bytes
+  float pres;            // 4 bytes
+  float base_pres;       // 4 bytes
+  long flight_time;      // 4 bytes
+  long time;             // 4 bytes
+                         // in total: 68 bytes (17 words)
 };
 
 /**
