@@ -1,11 +1,8 @@
 /***************************************************************************
-    Author: Auri Åhs
-    Simple telemetry using only a barometer
-    Testing is underway with integrating the accelerometer
-    REMEMBER TO ENABLE WRITING TO THE SD-CARD BEFORE LAUNCH
+    Author: Aurora Å, Isak H, Elias R, Alexander B
+    Full telemetry and logging suite.
  ***************************************************************************/
-// Plug in SCK ==> GPIO5 (D1)
-// Plug in SDA ==> GPIO4 (D2)
+
 
 #define ENABLE_BAROMETER 0
 #define ENABLE_ACCELEROMETER 1
@@ -84,20 +81,11 @@ float presArr[50];
 int prevStage = 1;
 struct telemetry flight_data;
 long begin_flight_time = 0;
-int in_flight = 0; 
+int in_flight = 0;
 vec3 acc;
 quat rot;
 
 
-/*
-void quaternionToEulerRV(sh2_RotationVectorWAcc_t* rotational_vector, sh2_Accelerometer_t* accelerometer, vec3* vec) {
-    rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
-}
-
-void quaternionToEulerGI(sh2_GyroIntegratedRV_t* rotational_vector, sh2_Accelerometer_t* accelerometer, vec3* vec) {
-    rotation(rotational_vector->i, rotational_vector->j, rotational_vector->k, rotational_vector->real, vec, accelerometer->x, accelerometer->y, accelerometer->z);
-}
-*/
 void flash(int times) {
     for (int i = 0; i<times; i++) {
         digitalWrite(LED_PIN,HIGH);
@@ -178,13 +166,23 @@ void setup() {
     digitalWrite(ERROR_LED_PIN,LOW);
     Serial.begin(9600);
 
-    while (!Serial && millis() - boottime < 10000) {
+    while (!Serial && millis() - boottime < 2000) {
         yield();
     }
 
     Serial.println("Begin boot process");
     flash(3);
     delay(flashTime*3);
+
+#if ENABLE_SERVO
+    Serial.println("Enabling servo");
+    shuteServo.attach(9);
+    shuteServo.write(SERVO_OPEN);
+    Serial.println("Servo in OPEN position");
+#else
+    Serial.println("Servo disabled");
+#endif
+
 
 #if ENABLE_ACCELEROMETER
     delay(1000);
@@ -294,19 +292,10 @@ void setup() {
 #endif
 
 #if ENABLE_SERVO
-    Serial.println("Enabling servo");
-    shuteServo.attach(9);
-    shuteServo.write(SERVO_OPEN);
-    Serial.println("Servo in OPEN position");
-    delay(5000);
     shuteServo.write(SERVO_LOCKED);
     Serial.println("Servo in LOCKED position");
-#else
-    Serial.println("Servo disabled");
 #endif
     digitalWrite(LAUNCH_LED_PIN,HIGH);
-
-    flight_data.acc_globZ = 0.1;
 
 }
 
@@ -338,7 +327,7 @@ void loop() {
             tacc.y = sensorValue.un.accelerometer.y;
             tacc.z = sensorValue.un.accelerometer.z;
         }
-        if(sensorValue.sensorId == SH2_ROTATION_VECTOR){
+        if(sensorValue.sensorId == SH2_ARVR_STABILIZED_RV){
             //you might think this is wrong, but trust me, the vector is messed up. DAMN AND BLAST THE AUTHORS OF THE BNO08X LIBRARY!! actually nvm they fixed it
             trot.R = sensorValue.un.rotationVector.real;
             trot.I = sensorValue.un.rotationVector.i;
@@ -386,13 +375,19 @@ void loop() {
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
-    if ((flight_data.pres - flight_data.base_pres*100) <= -120 && begin_flight_time == 0)
+    if (flight_data.acc.x < -12.00 && begin_flight_time == 0)
     {
+        Serial.println("begin flight!!----------------------------------------");
+        Serial.println("begin flight!!----------------------------------------");
+        Serial.println("begin flight!!----------------------------------------");
+        Serial.println("begin flight!!----------------------------------------");
+        Serial.println("begin flight!!----------------------------------------");
        begin_flight_time = millis();
        in_flight = 1;
     }
     if (in_flight == 1)
     {
+        digitalWrite(CARD_LED_PIN,HIGH);
         flight_data.flight_time = millis() - begin_flight_time;
     }
     emergency_chute(&flight_data, prevStage);
@@ -443,10 +438,10 @@ void loop() {
 
 #endif
 
-#if ENABLE_ACCELEROMETER
-    //printVec3("Acceleration vector", tacc.x, tacc.y, tacc.z, true);
+#if ENABLE_ACCELEROMETER 
+    printVec3("Acceleration vector", acc, true);
 
-    //printVec3("Gravity vector", grav.x, grav.y, grav.z, true);
+    printQuat("Rotation Vector", rot, true);
 
     //printQuat("Rotation Vector", trot.R, trot.I, trot.J, trot.K, true);
 
@@ -461,10 +456,10 @@ void loop() {
 
     
 #endif
-    Serial.println();
+/*    Serial.println();
     Serial.print(written);
     Serial.println(" bytes to file write-buffer");
-
+*/
 
     //Serial.println();
     // constant time loop

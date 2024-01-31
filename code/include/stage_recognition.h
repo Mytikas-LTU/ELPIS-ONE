@@ -71,7 +71,6 @@ struct telemetry
   float base_pres;
   long flight_time;
   long time;
-  float acc_globZ;
 };
 
 /**
