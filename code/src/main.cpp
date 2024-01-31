@@ -363,7 +363,7 @@ void loop() {
     racc.x = rotAcc.I;
     racc.y = rotAcc.J;
     racc.z = rotAcc.K;
-
+    flight_data.rotAcc = racc;
 #endif
 
 #if ENABLE_BAROMETER
