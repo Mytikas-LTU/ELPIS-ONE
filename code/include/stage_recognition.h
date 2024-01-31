@@ -47,9 +47,14 @@ struct telemetry
   //the LOCAL acceleration of the rocket
   vec3 acc;
 
+<<<<<<< HEAD
   // vec3 rotAcc
 
   //the orientation of the rocket
+=======
+  vec3 rot_acc;
+
+>>>>>>> quaternion_rotation
   quat rot;
 
   //did the bno reset this iteration?
