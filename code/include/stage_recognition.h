@@ -47,14 +47,14 @@ struct telemetry
   //the LOCAL acceleration of the rocket
   vec3 acc;              // 3*4 bytes
 
-  // vec3 rotAcc
-
   //the orientation of the rocket
   quat rot;              // 4*4 bytes
 
+  vec3 rot_acc;          // 3*4 bytes (NOTE: THIS WAS NOT PRESENT IN THE LAUNCH DATA OF MK IIA)
+
   //did the bno reset this iteration?
   bool bnoReset;         // 1 (+3 nulls due to alignment) bytes
-  //A bitmask for missed readings withe bno. A 1 in the first place means 
+  //A bitmask for missed readings withe bno. A 1 in the first place means
   //we missed acc, and in the second place means a missed rot reading
   int bnoMissed;         // 4 bytes
 
@@ -66,7 +66,7 @@ struct telemetry
   float base_pres;       // 4 bytes
   long flight_time;      // 4 bytes
   long time;             // 4 bytes
-                         // in total: 68 bytes (17 words)
+                         // in total: 80 bytes (20 words) (68 bytes (17 words) at launch of Mk IIa)
 };
 
 /**

@@ -4,7 +4,7 @@
  ***************************************************************************/
 
 
-#define ENABLE_BAROMETER 1
+#define ENABLE_BAROMETER 0
 #define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 1
 #define ENABLE_LOGGING 1
@@ -98,11 +98,11 @@ void flash(int times) {
 //sets all the sensor outputs to recieve
 //for more information on the sh2 sensorValues refer to the sh2 reference manual(downloaded in docs folder)
 bool SetReports() {
-    if(!bno08x.enableReport(SH2_ARVR_STABILIZED_RV)) {
+    if(!bno08x.enableReport(SH2_ROTATION_VECTOR, 1000000/sampleRate)) {
         Serial.println("Could not enable rotation vector reports!");
         return false;
     }
-    if(!bno08x.enableReport(SH2_ACCELEROMETER)) {
+    if(!bno08x.enableReport(SH2_ACCELEROMETER, 1000000/sampleRate)) {
         Serial.println("Could not enable accelerometer reports!");
         return false;
     }
@@ -142,6 +142,19 @@ void printQuat(char *quatName, quat _quat, bool lineBreak){
         Serial.println();
 }
 
+//The Hamilton Product, gracefully copied from wikipedia, equates to q1*q2
+quat multiply_quat(quat q1, quat q2) {
+    float r = q1.R*q2.R - q1.I*q2.I - q1.J*q2.J - q1.K*q2.K;
+    float i = q1.R*q2.I + q1.I*q2.R + q1.J*q2.K - q1.K*q2.J;
+    float j = q1.R*q2.J - q1.I*q2.K + q1.J*q2.R + q1.K*q2.I;
+    float k = q1.R*q2.K + q1.I*q2.J - q1.J*q2.I + q1.K*q2.R;
+    return quat{r, i, j, k};
+}
+
+quat invert_quat(quat q){
+    return{q.R, -q.I, -q.J, -q.K};
+}
+
 void setup() {
     long int boottime = millis();
     float pressures = 0;
@@ -178,6 +191,7 @@ void setup() {
         Serial.println("BNO error");
         digitalWrite(ERROR_LED_PIN,HIGH);
     }
+    delay(100);
     //check whether all the reports could be found, otherwise prevent the rest of code from runnning
     if(!SetReports()) {
         while(true) {
@@ -322,24 +336,34 @@ void loop() {
         }
     }
 
-    //the next section will probably work, as testing shows that data loss occurs really infrequently
-    //if we didnt recieve any data, use the one stored from last iteration
-    flight_data.bnoMissed = 0;
-    if(tacc.x ==0.0 && tacc.y == 0.0 && tacc.z == 0.0){
+    if(tacc.x == 0.0 && tacc.y == 0.0 && tacc.z == 0.0){
         tacc = acc;
-        flight_data.bnoMissed |= 0b1;
     }
-    if(trot.I == 0.0 &&trot.K == 0.0 &&trot.J == 0.0 &&trot.R == 0.0){
+    if(trot.R == 0.0 && trot.I == 0.0 && trot.J == 0.0 && trot.K == 0.0){
         trot = rot;
-        flight_data.bnoMissed |= 0b10;
     }
 
-    //store the data of the current iteration
     acc = tacc;
+
     rot = trot;
 
     flight_data.acc = acc;
     flight_data.rot = rot;
+    //printVec3("Unrotated acceleration vector", acc.x, acc.y, acc.z, true);
+
+    //rotate the acceleration vector
+    quat tempAcc = {0, acc.x, acc.y, acc.z};
+    //quat rotAcc = multiply_quat(multiply_quat(rot, tempAcc), invert_quat(rot));
+    quat q = rot;
+    quat q_ = invert_quat(rot);
+
+    quat t = multiply_quat(q,tempAcc);
+    quat rotAcc = multiply_quat(t,q_);
+    vec3 racc;
+    racc.x = rotAcc.I;
+    racc.y = rotAcc.J;
+    racc.z = rotAcc.K;
+
 #endif
 
 #if ENABLE_BAROMETER
@@ -419,7 +443,9 @@ void loop() {
 
     printQuat("Rotation Vector", rot, true);
 
-    //printVec3("Rotated Acceleration", acc_.xr, vec.yr, vec.zr, true);
+    //printQuat("Rotation Vector", trot.R, trot.I, trot.J, trot.K, true);
+
+    printVec3("Rotated Acceleration", racc.x, racc.y, racc.z, true);
 /*
     Serial.print("xr: ");
     Serial.print(vec.xr);                        Serial.print("\t");
@@ -435,7 +461,7 @@ void loop() {
     Serial.println(" bytes to file write-buffer");
 */
 
-    Serial.println();
+    //Serial.println();
     // constant time loop
     digitalWrite(LED_PIN,LOW);
     while(millis()-lastLoop < 1000/sampleRate) {}
