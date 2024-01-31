@@ -164,10 +164,10 @@ void printQuat(const char *quatName, float r, float i, float j, float k, bool li
 
 //The Hamilton Product, gracefully copied from wikipedia, equates to q1*q2
 quat multiply_quat(quat q1, quat q2) {
-    float r = q1.R*q2.R + q1.I*q2.I + q1.J*q2.J + q1.K*q2.K;
-    float i = q1.R*q2.I + q1.I*q2.R + q1.J*q2.K + q1.K*q2.J;
-    float j = q1.R*q2.J + q1.I*q2.K + q1.J*q2.R + q1.K*q2.I;
-    float k = q1.R*q2.K + q1.I*q2.J + q1.J*q2.I + q1.K*q2.R;
+    float r = q1.R*q2.R - q1.I*q2.I - q1.J*q2.J - q1.K*q2.K;
+    float i = q1.R*q2.I + q1.I*q2.R + q1.J*q2.K - q1.K*q2.J;
+    float j = q1.R*q2.J - q1.I*q2.K + q1.J*q2.R + q1.K*q2.I;
+    float k = q1.R*q2.K + q1.I*q2.J - q1.J*q2.I + q1.K*q2.R;
     return quat{r, i, j, k};
 }
 
@@ -345,10 +345,10 @@ void loop() {
         }
         if(sensorValue.sensorId==SH2_ROTATION_VECTOR) {
             //It would appear that the bno sends the data in the wrong order. Source: Trust me bro
-            trot.K = sensorValue.un.rotationVector.real;
-            trot.J = sensorValue.un.rotationVector.i;
-            trot.I = sensorValue.un.rotationVector.j;
-            trot.R = sensorValue.un.rotationVector.k;
+            trot.R = sensorValue.un.rotationVector.real;
+            trot.I = sensorValue.un.rotationVector.i;
+            trot.J = sensorValue.un.rotationVector.j;
+            trot.K = sensorValue.un.rotationVector.k;
         }
     }
 
@@ -379,7 +379,12 @@ void loop() {
 
     //rotate the acceleration vector
     quat tempAcc = {0, acc.x, acc.y, acc.z};
-    quat rotAcc = multiply_quat(multiply_quat(rot, tempAcc), invert_quat(rot));
+    //quat rotAcc = multiply_quat(multiply_quat(rot, tempAcc), invert_quat(rot));
+    quat q = rot;
+    quat q_ = invert_quat(rot);
+
+    quat t = multiply_quat(q,tempAcc);
+    quat rotAcc = multiply_quat(t,q_);
     vec3 racc;
     racc.x = rotAcc.I;
     racc.y = rotAcc.J;
