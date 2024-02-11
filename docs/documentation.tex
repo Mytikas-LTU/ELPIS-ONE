@@ -1,0 +1,35 @@
+\documentclass{article}
+\title{Technical Documentation Avionics Bay, Elpis MK IIb}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{pgfplots}
+\usepackage{unicode-math}
+\usepackage{tikz-3dplot}
+\usepackage{emoji}
+\usepackage[american]{circuitikz}
+\usepackage{enumitem}
+\tdplotsetmaincoords{60}{115}
+\usepgfplotslibrary{fillbetween}
+\pgfplotsset{compat = newest}
+\date{}
+\author{Mytikas}
+
+\newcommand{\twopartdef}[4]
+{
+	\left\{
+		\begin{array}{ll}
+			#1 & \mbox{if } #2 \\
+			#3 & \mbox{if } #4
+		\end{array}
+	\right. %}
+}
+\newcommand{\pd}[2]
+{
+	\frac{\partial#1}{\partial#2}
+}
+
+\begin{document}
+\maketitle
+
+\end{document}
+ 
