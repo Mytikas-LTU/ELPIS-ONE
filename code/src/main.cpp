@@ -33,7 +33,6 @@
 #define SERVO_LOCKED 90
 
 Adafruit_BMP280 bmp; // I2C
-Adafruit_BNO08x bno08x(BNO08X_RESET);
 
 
 const uint8_t LED_PIN = 2; // Define the LED-pin
@@ -49,18 +48,6 @@ const int sampleRate = 10; // samlpes per second
 const int chipSelect = SS1;
 
 Servo shuteServo;
-
-sh2_SensorValue_t sensorValue; //contains the sensor data for bno085
-
-#ifdef FAST_MODE
-  // Top frequency is reported to be 1000Hz (but freq is somewhat variable)
-  sh2_SensorId_t reportType = SH2_GYRO_INTEGRATED_RV;
-  long reportIntervalUs = 2000;
-#else
-  // Top frequency is about 250Hz but this report is more accurate
-  sh2_SensorId_t reportType = SH2_ARVR_STABILIZED_RV;
-  long reportIntervalUs = 5000;
-#endif
 
 struct rot_acc {
     float xr;
@@ -82,8 +69,6 @@ int prevStage = 1;
 struct telemetry flight_data;
 long begin_flight_time = 0;
 int in_flight = 0;
-vec3 acc;
-quat rot;
 
 
 void flash(int times) {
@@ -93,25 +78,6 @@ void flash(int times) {
         digitalWrite(LED_PIN,LOW);
         delay(flashTime);
     }
-}
-
-//sets all the sensor outputs to recieve
-//for more information on the sh2 sensorValues refer to the sh2 reference manual(downloaded in docs folder)
-bool SetReports() {
-    if(!bno08x.enableReport(SH2_ROTATION_VECTOR, 1000000/sampleRate)) {
-        Serial.println("Could not enable rotation vector reports!");
-        return false;
-    }
-    if(!bno08x.enableReport(SH2_ACCELEROMETER, 1000000/sampleRate)) {
-        Serial.println("Could not enable accelerometer reports!");
-        return false;
-    }
-    return true;
-}
-
-//handles potential errors when setting BNO reports, currenlty unused
-void BNOError(){
-    //maybye flash the light to indicate errors?
 }
 
 //prints a vec3 to serial. Was this comment necessary? probably not
@@ -140,19 +106,6 @@ void printQuat(char *quatName, quat _quat, bool lineBreak){
     Serial.print(_quat.K);
     if(lineBreak)
         Serial.println();
-}
-
-//The Hamilton Product, gracefully copied from wikipedia, equates to q1*q2
-quat multiply_quat(quat q1, quat q2) {
-    float r = q1.R*q2.R - q1.I*q2.I - q1.J*q2.J - q1.K*q2.K;
-    float i = q1.R*q2.I + q1.I*q2.R + q1.J*q2.K - q1.K*q2.J;
-    float j = q1.R*q2.J - q1.I*q2.K + q1.J*q2.R + q1.K*q2.I;
-    float k = q1.R*q2.K + q1.I*q2.J - q1.J*q2.I + q1.K*q2.R;
-    return quat{r, i, j, k};
-}
-
-quat invert_quat(quat q){
-    return{q.R, -q.I, -q.J, -q.K};
 }
 
 void setup() {
@@ -185,21 +138,7 @@ void setup() {
 
 
 #if ENABLE_ACCELEROMETER
-    delay(1000);
-    Serial.println("Init BNO085!");
-    while(!bno08x.begin_I2C()) {
-        Serial.println("BNO error");
-        digitalWrite(ERROR_LED_PIN,HIGH);
-    }
-    delay(100);
-    //check whether all the reports could be found, otherwise prevent the rest of code from runnning
-    if(!SetReports()) {
-        while(true) {
-            delay(1000);
-        }
-    }
-    delay(1000);
-    Serial.println("BNO085 Initialized");
+    Accelerometer accelerometer = Accelerometer::Accelerometer();
 #else
     Serial.println("BNO085 Disabled");
 #endif
@@ -309,61 +248,7 @@ void loop() {
     flight_data.time = millis();
 
 #if ENABLE_ACCELEROMETER
-    //temporary variables to handle missed readings
-    vec3 tacc = {0.0,0.0,0.0};
-    quat trot = {0.0,0.0,0.0,0.0};
-
-    flight_data.bnoReset = false;
-    if(bno08x.wasReset()) {
-        Serial.println("BNO085 was reset");
-        SetReports();
-        flight_data.bnoReset = true;
-    }
-
-    //get the BNO085 sensor data
-    while(bno08x.getSensorEvent(&sensorValue)){
-        if(sensorValue.sensorId == SH2_ACCELEROMETER) {
-            tacc.x = sensorValue.un.accelerometer.x;
-            tacc.y = sensorValue.un.accelerometer.y;
-            tacc.z = sensorValue.un.accelerometer.z;
-        }
-        if(sensorValue.sensorId == SH2_ARVR_STABILIZED_RV){
-            //you might think this is wrong, but trust me, the vector is messed up. DAMN AND BLAST THE AUTHORS OF THE BNO08X LIBRARY!! actually nvm they fixed it
-            trot.R = sensorValue.un.rotationVector.real;
-            trot.I = sensorValue.un.rotationVector.i;
-            trot.J = sensorValue.un.rotationVector.j;
-            trot.K = sensorValue.un.rotationVector.k;
-        }
-    }
-
-    if(tacc.x == 0.0 && tacc.y == 0.0 && tacc.z == 0.0){
-        tacc = acc;
-    }
-    if(trot.R == 0.0 && trot.I == 0.0 && trot.J == 0.0 && trot.K == 0.0){
-        trot = rot;
-    }
-
-    acc = tacc;
-
-    rot = trot;
-
-    flight_data.acc = acc;
-    flight_data.rot = rot;
-    //printVec3("Unrotated acceleration vector", acc.x, acc.y, acc.z, true);
-
-    //rotate the acceleration vector
-    quat tempAcc = {0, acc.x, acc.y, acc.z};
-    //quat rotAcc = multiply_quat(multiply_quat(rot, tempAcc), invert_quat(rot));
-    quat q = rot;
-    quat q_ = invert_quat(rot);
-
-    quat t = multiply_quat(q,tempAcc);
-    quat rotAcc = multiply_quat(t,q_);
-    vec3 racc;
-    racc.x = rotAcc.I;
-    racc.y = rotAcc.J;
-    racc.z = rotAcc.K;
-    flight_data.rotAcc = racc;
+    getData(&flight_data);
 #endif
 
 #if ENABLE_BAROMETER
