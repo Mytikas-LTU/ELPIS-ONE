@@ -1,5 +1,5 @@
 \documentclass{article}
-\title{Technical Documentation Avionics Bay, Elpis MK IIb}
+\title{Technical Documentation Avionics Bay\\Elpis MK IIb}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{pgfplots}
@@ -30,6 +30,32 @@
 
 \begin{document}
 \maketitle
+\section*{Hardware}
+\subsection*{Components}
+\begin{table}[h]
+\begin{tabular}{ll}
+Microcontroller & Arduino MKR Zero \\
+Barometer & BMP 280 \\
+Accelerometer & MPU 5060 \\
+\end{tabular}
+\end{table}
+
+\subsection*{Circuit diagram}
+
+\begin{circuitikz}
+\def\sensor(#1)#2{
+	\begin{scope}[shift={(#1)}]
+	\draw (-1.5,-2) rectangle (1.5,2)
+	(0,0) node[anchor=south] {#2}
+	
+	;
+	\end{scope}
+}
+
+\sensor(0,0){BMP-280}
+\sensor(0,-5){MPU-5060}
+\end{circuitikz}
+
 
 \end{document}
  
