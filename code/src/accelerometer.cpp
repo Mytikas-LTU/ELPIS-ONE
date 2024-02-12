@@ -1,15 +1,20 @@
+//
+
 #include <accelerometer.h>
 #include <Adafruit_BNO08x.h>
 #include <stage_recognition.h>
 
+#define SAMPLE_RATE 10
+#define ERROR_LED_PIN 4
+
 //sets all the sensor outputs to recieve
 //for more information on the sh2 sensorValues refer to the sh2 reference manual(downloaded in docs folder)
-bool SetReports() {
-    if(!sensor.enableReport(SH2_ROTATION_VECTOR, 1000000/sampleRate)) {
+bool Accelerometer::SetReports() {
+    if(!sensor.enableReport(SH2_ROTATION_VECTOR, 1000000/SAMPLE_RATE)) {
         Serial.println("Could not enable rotation vector reports!");
         return false;
     }
-    if(!sensor.enableReport(SH2_ACCELEROMETER, 1000000/sampleRate)) {
+    if(!sensor.enableReport(SH2_ACCELEROMETER, 1000000/SAMPLE_RATE)) {
         Serial.println("Could not enable accelerometer reports!");
         return false;
     }
@@ -43,15 +48,15 @@ Accelerometer::Accelerometer(){
 
 //The Hamilton Product, gracefully copied from wikipedia, equates to q1*q2
 quat multiply_quat(quat q1, quat q2) {
-    float r = q1.R*q2.R - q1.I*q2.I - q1.J*q2.J - q1.K*q2.K;
-    float i = q1.R*q2.I + q1.I*q2.R + q1.J*q2.K - q1.K*q2.J;
-    float j = q1.R*q2.J - q1.I*q2.K + q1.J*q2.R + q1.K*q2.I;
-    float k = q1.R*q2.K + q1.I*q2.J - q1.J*q2.I + q1.K*q2.R;
+    float r = q1.r*q2.r - q1.i*q2.i - q1.j*q2.j - q1.k*q2.k;
+    float i = q1.r*q2.i + q1.i*q2.r + q1.j*q2.k - q1.k*q2.j;
+    float j = q1.r*q2.j - q1.i*q2.k + q1.j*q2.r + q1.k*q2.i;
+    float k = q1.r*q2.k + q1.i*q2.j - q1.j*q2.i + q1.k*q2.r;
     return quat{r, i, j, k};
 }
 
 quat invert_quat(quat q){
-    return{q.R, -q.I, -q.J, -q.K};
+    return{q.r, -q.i, -q.j, -q.k};
 }
 
 void Accelerometer::getData(telemetry* data){
@@ -62,11 +67,11 @@ void Accelerometer::getData(telemetry* data){
     vec3 tacc = {0.0,0.0,0.0};
     quat trot = {0.0,0.0,0.0,0.0};
 
-    data.bnoReset = false;
+    data->bnoReset = false;
     if(sensor.wasReset()) {
         Serial.println("BNO085 was reset");
         SetReports();
-        data.bnoReset = true;
+        data->bnoReset = true;
     }
 
     //get the BNO085 sensor data
@@ -78,10 +83,10 @@ void Accelerometer::getData(telemetry* data){
         }
         if(sensorValue.sensorId == SH2_ARVR_STABILIZED_RV){
             //you might think this is wrong, but trust me, the vector is messed up. DAMN AND BLAST THE AUTHORS OF THE BNO08X LIBRARY!! actually nvm they fixed it
-            trot.R = sensorValue.un.rotationVector.real;
-            trot.I = sensorValue.un.rotationVector.i;
-            trot.J = sensorValue.un.rotationVector.j;
-            trot.K = sensorValue.un.rotationVector.k;
+            trot.r = sensorValue.un.rotationVector.real;
+            trot.i = sensorValue.un.rotationVector.i;
+            trot.j = sensorValue.un.rotationVector.j;
+            trot.k = sensorValue.un.rotationVector.k;
         }
     }
 
@@ -91,7 +96,7 @@ void Accelerometer::getData(telemetry* data){
         tacc = acc;
         data->bnoMissed += 1;
     }
-    if(trot.R == 0.0 && trot.I == 0.0 && trot.J == 0.0 && trot.K == 0.0){
+    if(trot.r == 0.0 && trot.i == 0.0 && trot.j == 0.0 && trot.k == 0.0){
         trot = rot;
         data->bnoMissed += 2;
     }
@@ -100,8 +105,8 @@ void Accelerometer::getData(telemetry* data){
 
     rot = trot;
 
-    data.acc = acc;
-    data.rot = rot;
+    data->acc = acc;
+    data->rot = rot;
 
     //rotate the acceleration vector
     quat tempAcc = {0, acc.x, acc.y, acc.z};
@@ -112,8 +117,8 @@ void Accelerometer::getData(telemetry* data){
     quat rotAcc = multiply_quat(t,q_);
     vec3 racc;
 
-    racc.x = rotAcc.I;
-    racc.y = rotAcc.J;
-    racc.z = rotAcc.K;
-    data.rotAcc = racc;
+    racc.x = rotAcc.i;
+    racc.y = rotAcc.j;
+    racc.z = rotAcc.k;
+    data->rotAcc = racc;
 }

@@ -36,10 +36,10 @@ struct vec3
 
 struct quat
 {
-  float R;
-  float I;
-  float J;
-  float K;
+  float r;
+  float i;
+  float j;
+  float k;
 };
 
 struct telemetry
@@ -48,7 +48,7 @@ struct telemetry
   vec3 acc;                   //3*4 bytes
 
   //the GLOBAL acceleration of the rocket, highly untested
-  vec3 rot_acc;               //3*4bytes THIS WAS NOT IN THE CODE THAT FLEW
+  vec3 rotAcc;               //3*4bytes THIS WAS NOT IN THE CODE THAT FLEW
 
   //the rotation of the rocket
   quat rot;                   //4*4 bytes

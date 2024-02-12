@@ -18,8 +18,9 @@ class Accelerometer {
         
         private:
             vec3 acc;
-            vec3 rot;
+            quat rot;
             bool setupError;
-            Adafruit_BNO08x sensor(-1);
+            Adafruit_BNO08x sensor;
             sh2_SensorValue sensorValue;
-}
+            bool SetReports();
+};

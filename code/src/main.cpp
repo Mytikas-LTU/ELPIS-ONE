@@ -19,6 +19,7 @@
 #include <Adafruit_BNO08x.h>
 #include<Servo.h>
 #include "stage_recognition.h"
+#include "accelerometer.h"
 
 
 #define BMP_SCK  (13)
@@ -27,12 +28,11 @@
 #define BMP_CS   (10)
 #define SERVO_PIN (9)
 
-#define BNO08X_RESET -1
-
 #define SERVO_OPEN 180
 #define SERVO_LOCKED 90
 
 Adafruit_BMP280 bmp; // I2C
+Accelerometer acc_sensor;
 
 
 const uint8_t LED_PIN = 2; // Define the LED-pin
@@ -97,13 +97,13 @@ void printVec3(char *vecName, vec3 vec, bool lineBreak) {
 void printQuat(char *quatName, quat _quat, bool lineBreak){
     Serial.print(quatName);
     Serial.print(",\tr: ");
-    Serial.print(_quat.R);
+    Serial.print(_quat.r);
     Serial.print(",\ti: ");
-    Serial.print(_quat.I);
+    Serial.print(_quat.i);
     Serial.print(",\tj: ");
-    Serial.print(_quat.J);
+    Serial.print(_quat.j);
     Serial.print(",\tk: ");
-    Serial.print(_quat.K);
+    Serial.print(_quat.k);
     if(lineBreak)
         Serial.println();
 }
@@ -138,7 +138,7 @@ void setup() {
 
 
 #if ENABLE_ACCELEROMETER
-    Accelerometer accelerometer = Accelerometer::Accelerometer();
+    acc_sensor = Accelerometer();
 #else
     Serial.println("BNO085 Disabled");
 #endif
@@ -248,7 +248,7 @@ void loop() {
     flight_data.time = millis();
 
 #if ENABLE_ACCELEROMETER
-    getData(&flight_data);
+    acc_sensor.getData(&flight_data);
 #endif
 
 #if ENABLE_BAROMETER
@@ -324,13 +324,13 @@ void loop() {
 #endif
 
 #if ENABLE_ACCELEROMETER 
-    printVec3("Acceleration vector", acc, true);
+    //printVec3("Acceleration vector", acc, true);
 
-    printQuat("Rotation Vector", rot, true);
+    //printQuat("Rotation Vector", rot, true);
 
     //printQuat("Rotation Vector", trot.R, trot.I, trot.J, trot.K, true);
 
-    printVec3("Rotated Acceleration", racc.x, racc.y, racc.z, true);
+    //printVec3("Rotated Acceleration", racc.x, racc.y, racc.z, true);
 /*
     Serial.print("xr: ");
     Serial.print(vec.xr);                        Serial.print("\t");
