@@ -3,18 +3,16 @@
 #include <accelerometer.h>
 #include <Adafruit_BNO08x.h>
 #include <stage_recognition.h>
-
-#define SAMPLE_RATE 10
-#define ERROR_LED_PIN 4
+#include <basicIO.h>
 
 //sets all the sensor outputs to recieve
 //for more information on the sh2 sensorValues refer to the sh2 reference manual(downloaded in docs folder)
 bool Accelerometer::SetReports() {
-    if(!sensor.enableReport(SH2_ROTATION_VECTOR, 1000000/SAMPLE_RATE)) {
+    if(!sensor.enableReport(SH2_ROTATION_VECTOR, 1000000/sampleRate)) {
         Serial.println("Could not enable rotation vector reports!");
         return false;
     }
-    if(!sensor.enableReport(SH2_ACCELEROMETER, 1000000/SAMPLE_RATE)) {
+    if(!sensor.enableReport(SH2_ACCELEROMETER, 1000000/sampleRate)) {
         Serial.println("Could not enable accelerometer reports!");
         return false;
     }

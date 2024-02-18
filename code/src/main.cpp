@@ -4,7 +4,7 @@
  ***************************************************************************/
 
 
-#define ENABLE_BAROMETER 0
+#define ENABLE_BAROMETER 1
 #define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 1
 #define ENABLE_LOGGING 1
@@ -20,6 +20,8 @@
 #include<Servo.h>
 #include "stage_recognition.h"
 #include "accelerometer.h"
+#include "Barometer.h"
+#include "basicIO.h"
 
 
 #define BMP_SCK  (13)
@@ -31,19 +33,8 @@
 #define SERVO_OPEN 180
 #define SERVO_LOCKED 90
 
-Adafruit_BMP280 bmp; // I2C
+Barometer barom_sensor;
 Accelerometer acc_sensor;
-
-
-const uint8_t LED_PIN = 2; // Define the LED-pin
-const uint8_t ERROR_LED_PIN = 3; // Define the LED-pin
-const uint8_t LAUNCH_LED_PIN = 4; // Define the LED-pin
-const uint8_t CARD_LED_PIN = 5; // Define the LED-pin
-
-
-const int flashTime = 100; // time of a flash of the status LED, in millis
-const int pressureSamples = 10; // do better
-const int sampleRate = 10; // samlpes per second
 
 const int chipSelect = SS1;
 
@@ -70,19 +61,8 @@ struct telemetry flight_data;
 long begin_flight_time = 0;
 int in_flight = 0;
 
-
-void flash(int times) {
-    for (int i = 0; i<times; i++) {
-        digitalWrite(LED_PIN,HIGH);
-        delay(flashTime);
-        digitalWrite(LED_PIN,LOW);
-        delay(flashTime);
-    }
-}
-
 void setup() {
     long int boottime = millis();
-    float pressures = 0;
     pinMode(LED_PIN,OUTPUT);
     pinMode(ERROR_LED_PIN,OUTPUT);
     pinMode(LAUNCH_LED_PIN,OUTPUT);
@@ -116,23 +96,7 @@ void setup() {
 #endif
 
 #if ENABLE_BAROMETER
-    Serial.println("Initializing BMP280");
-    flash(1);
-    delay(flashTime*3);
-    while(!bmp.begin()) {
-        Serial.println("BMP280 Error");
-        digitalWrite(ERROR_LED_PIN,HIGH);
-        flash(1);
-        delay(flashTime*3);
-
-      }
-    /* Default settings from datasheet. */
-    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
-                    Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
-                    Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
-                    Adafruit_BMP280::FILTER_X16,      /* Filtering. */
-                    Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
-    Serial.println("BMP280 initialized!");
+    barom_sensor = Barometer();
 #else
     Serial.println("BMP280 Disabled");
 #endif
@@ -171,20 +135,7 @@ void setup() {
 #endif
 
 #if ENABLE_BAROMETER
-    Serial.print("Calibrating pressure at ground level");
-    for(int i=0; i<pressureSamples; i++) {
-        Serial.print(".");
-        pressures += bmp.readPressure();
-        delay(500);
-        digitalWrite(LED_PIN,HIGH);
-        delay(500);
-        digitalWrite(LED_PIN,LOW);
-    }
-    Serial.println();
-    flight_data.base_pres = (pressures/pressureSamples)/100;
-    Serial.print("Calibrated at ");
-    Serial.print(flight_data.base_pres);
-    Serial.println(" hPa");
+    flight_data.base_pres = barom_sensor.calibrate();
 #else
     Serial.println("Pressure calibration disabled");
 #endif
@@ -224,9 +175,7 @@ void loop() {
 #endif
 
 #if ENABLE_BAROMETER
-    flight_data.temp = bmp.readTemperature();
-    flight_data.pres = bmp.readPressure();
-    flight_data.alt = bmp.readAltitude(basePressure);
+    barom_sensor.getData(&flight_data);
 #endif
 
 #if ENABLE_DUMMYDATA
