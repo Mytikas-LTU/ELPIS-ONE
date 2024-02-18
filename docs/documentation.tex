@@ -41,21 +41,52 @@ Accelerometer & MPU 5060 \\
 \end{table}
 
 \subsection*{Circuit diagram}
-
+\begin{figure}[!h]
+\centering
+\scalebox{0.7}{
 \begin{circuitikz}
-\def\sensor(#1)#2{
+\def\sensor(#1)#2#3{
 	\begin{scope}[shift={(#1)}]
-	\draw (-1.5,-2) rectangle (1.5,2)
-	(0,0) node[anchor=south] {#2}
-	
+	\draw (-1.5,-2.5) rectangle (1.5,2.5)
+	(0,-0.25) node[anchor=south] {#2}
+	(-1.5, 1.5) node[anchor=west] {$V_{cc}$} coordinate (#3 vcc)
+	(-1.5, 0.5) node[anchor=west] {GND} coordinate (#3 gnd)
+	(-1.5,-0.5) node[anchor=west] {SCL/SCK} coordinate (#3 scl)
+	(-1.5,-1.5) node[anchor=west] {SDA/SDI} coordinate (#3 sda)
 	;
 	\end{scope}
 }
 
-\sensor(0,0){BMP-280}
-\sensor(0,-5){MPU-5060}
+\sensor(5,0){BMP-280}{bar}
+\sensor(5,-6){MPU-5060}{acc}
+\draw(-10,2.5) rectangle (-5, -7.5) (-7.5, -2.5) node[anchor=south] {Arduino MKR Zero};
+\draw
+(-5, 1.5) node[anchor=east] {$V_{cc}$} -- (bar vcc)
+(-5, 1.5) to[short, -*] ++(7.5, 0) |- (acc vcc)
+(-5, 0.5) node[anchor=east] {GND} -- (bar gnd)
+(-5, 0.5) to[short, -*] ++(7, 0) |- (acc gnd)
+(-5, -0.5) node[anchor=east] {SCL} -- (bar scl)
+(-5, -0.5) to[short, -*] ++(6.5, 0) |- (acc scl)
+(-5, -1.5) node[anchor=east] {SDA} -- (bar sda)
+(-5, -1.5) to[short, -*] ++(6, 0) |- (acc sda)
+
+(-5, -3.5) node[anchor=east] {0} to[leDo, -*] ++(5,0)
+(-5, -4.5) node[anchor=east] {$\sim1$} to[leDo, -*] ++(5,0)
+(-5, -5.5) node[anchor=east] {$\sim2$} to[leDo, -*] ++(5,0)
+(-5, -6.5) node[anchor=east] {$\sim3$} to[leDo] ++(5,0) -- (0, -3.5) to[R=220 $\Omega$] (0,-1.5) to[short, -*] (0,0.5)
+;
 \end{circuitikz}
-
-
+}
+\end{figure}
+\subsection*{Pinmap}
+\begin{table}[h!]
+\begin{tabular}{llll}
+Printed name & Compiler name & Variable name & Use \\
+\hline
+$V_{cc}$ & n/a & n/a & Power supply voltage \\
+GND & n/a & n/a & Ground \\
+SCL
+\end{tabular}
+\end{table}
 \end{document}
  
