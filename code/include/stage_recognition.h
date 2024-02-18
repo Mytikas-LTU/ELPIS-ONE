@@ -27,27 +27,27 @@ enum Direction // Defines directions
   down = 3
 };
 
-struct quat
+struct Quat
 {
   float r;
   float i;
   float j;
   float k;
 
-  quat(float _r, float _i, float _j, float _k){
+  Quat(float _r, float _i, float _j, float _k){
     r=_r;
     i=_i;
     j=_j;
     k=_k;
   }
-  quat(){
+  Quat(){
     r=0.0;
     i=0.0;
     j=0.0;
     k=0.0;
   }
 
-  //prints a quat to Serial
+  //prints a Quat to Serial
   void print(const char* name, bool lbreak){
     Serial.print(name);
     Serial.print(": r: ");
@@ -62,39 +62,39 @@ struct quat
       Serial.println();
   }
 
-  //inverts a quat
-  quat invert(){
-    return quat(r,-i,-j,-k);
+  //inverts a Quat
+  Quat invert(){
+    return Quat(r,-i,-j,-k);
   }
 
-  //the hamilton product of two quaternions, equates to q1*q2
-  quat multiply(quat q2){
+  //the hamilton product of two Quaternions, eQuates to q1*q2
+  Quat multiply(Quat q2){
     float _r = r*q2.r - i*q2.i - j*q2.j - k*q2.k;
     float _i = r*q2.i + i*q2.r + j*q2.k - k*q2.j;
     float _j = r*q2.j - i*q2.k + j*q2.r + k*q2.i;
     float _k = r*q2.k + i*q2.j - j*q2.i + k*q2.r;
-    return quat(_r,_i,_j,_k);
+    return Quat(_r,_i,_j,_k);
   }
 };
 
-struct vec3
+struct Vec3
 {
   float x;
   float y;
   float z;
 
-  vec3(float _x, float _y, float _z) {
+  Vec3(float _x, float _y, float _z) {
     x=_x;
     y=_y;
     z=_z;
   }
-  vec3(){
+  Vec3(){
     x=0.0;
     y=0.0;
     z=0.0;
   }
 
-  //prints a vec3 to serial
+  //prints a Vec3 to serial
   void print(const char* name, bool lbreak){
     Serial.print(name);
     Serial.print(": x: ");
@@ -107,27 +107,27 @@ struct vec3
       Serial.println();
   }
 
-  //rotates a vec3 using a quat
-  vec3 rotate(quat rotVec){
-    quat aQuat = quat(0,x,y,z);
-    quat rotVecInv = rotVec.invert();
+  //rotates a Vec3 using a Quat
+  Vec3 rotate(Quat rotVec){
+    Quat aQuat = Quat(0,x,y,z);
+    Quat rotVecInv = rotVec.invert();
 
-    quat t = rotVec.multiply(aQuat);
-    quat rotAcc = t.multiply(rotVecInv);
-    return vec3(rotAcc.i, rotAcc.j, rotAcc.k);
+    Quat t = rotVec.multiply(aQuat);
+    Quat rotAcc = t.multiply(rotVecInv);
+    return Vec3(rotAcc.i, rotAcc.j, rotAcc.k);
   }
 };
 
 struct telemetry
 {
   //the LOCAL acceleration of the rocket
-  vec3 acc;                   //3*4 bytes
+  Vec3 acc;                   //3*4 bytes
 
   //the GLOBAL acceleration of the rocket, highly untested
-  vec3 rotAcc;               //3*4bytes THIS WAS NOT IN THE CODE THAT FLEW
+  Vec3 rotAcc;               //3*4bytes THIS WAS NOT IN THE CODE THAT FLEW
 
   //the rotation of the rocket
-  quat rot;                   //4*4 bytes
+  Quat rot;                   //4*4 bytes
 
   //did the bno reset this iteration?
   bool bnoReset;              //1 (+3 alignment) bytes

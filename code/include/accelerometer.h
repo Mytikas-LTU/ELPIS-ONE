@@ -17,8 +17,8 @@ class Accelerometer {
         void getData(telemetry* data);
         
         private:
-            vec3 acc;
-            quat rot;
+            Vec3 acc;
+            Quat rot;
             bool setupError;
             Adafruit_BNO08x sensor;
             sh2_SensorValue sensorValue;

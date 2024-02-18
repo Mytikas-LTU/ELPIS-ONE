@@ -23,8 +23,8 @@ bool Accelerometer::SetReports() {
 
 Accelerometer::Accelerometer(){
     //Initialize the values
-    acc = vec3(0.0,0.0,0.0);
-    rot = quat(0.0, 0.0, 0.0, 0.0);
+    acc = Vec3(0.0,0.0,0.0);
+    rot = Quat(0.0, 0.0, 0.0, 0.0);
 
     //initialize the BNO
     Serial.println("Init BNO085!");
@@ -51,8 +51,8 @@ void Accelerometer::getData(telemetry* data){
         return;
 
     //temporary variables to handle missed readings
-    vec3 tacc = {0.0,0.0,0.0};
-    quat trot = {0.0,0.0,0.0,0.0};
+    Vec3 tacc = {0.0,0.0,0.0};
+    Quat trot = {0.0,0.0,0.0,0.0};
 
     data->bnoReset = false;
     if(sensor.wasReset()) {
@@ -96,6 +96,6 @@ void Accelerometer::getData(telemetry* data){
     data->rot = rot;
 
     //rotate the acceleration vector
-    vec3 racc = acc.rotate(rot);
+    Vec3 racc = acc.rotate(rot);
     data->rotAcc = racc;
 }
