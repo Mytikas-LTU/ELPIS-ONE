@@ -4,11 +4,10 @@
 \usepackage{amssymb}
 \usepackage{pgfplots}
 \usepackage{unicode-math}
-\usepackage{tikz-3dplot}
 \usepackage{emoji}
 \usepackage[american]{circuitikz}
 \usepackage{enumitem}
-\tdplotsetmaincoords{60}{115}
+\usepackage{float}
 \usepgfplotslibrary{fillbetween}
 \pgfplotsset{compat = newest}
 \date{}
@@ -37,6 +36,7 @@
 Microcontroller & Arduino MKR Zero \\
 Barometer & BMP 280 \\
 Accelerometer & MPU 5060 \\
+Servo & \\
 \end{tabular}
 \end{table}
 
@@ -57,36 +57,51 @@ Accelerometer & MPU 5060 \\
 	\end{scope}
 }
 
-\sensor(5,0){BMP-280}{bar}
-\sensor(5,-6){MPU-5060}{acc}
-\draw(-10,2.5) rectangle (-5, -7.5) (-7.5, -2.5) node[anchor=south] {Arduino MKR Zero};
+\sensor(5.5,0){BMP-280}{bar}
+\sensor(5.5,-6){MPU-5060}{acc}
+\draw(-10,2.5) rectangle (-5, -8) (-7.5, -2.5) node[anchor=south] {Arduino MKR Zero};
+\draw(-2, -7) rectangle (1, -8) (-0.5, -7.5) node[anchor=north] {Servo};
 \draw
 (-5, 1.5) node[anchor=east] {$V_{cc}$} -- (bar vcc)
-(-5, 1.5) to[short, -*] ++(7.5, 0) |- (acc vcc)
+(-5, 1.5) to[short, -*] ++(8, 0) |- (acc vcc)
 (-5, 0.5) node[anchor=east] {GND} -- (bar gnd)
-(-5, 0.5) to[short, -*] ++(7, 0) |- (acc gnd)
-(-5, -0.5) node[anchor=east] {SCL} -- (bar scl)
-(-5, -0.5) to[short, -*] ++(6.5, 0) |- (acc scl)
-(-5, -1.5) node[anchor=east] {SDA} -- (bar sda)
-(-5, -1.5) to[short, -*] ++(6, 0) |- (acc sda)
+(-5, 0.5) to[short, -*] ++(7.5, 0) |- (acc gnd)
+(-5, -0.5) node[anchor=east] {12 SCL} -- (bar scl)
+(-5, -0.5) to[short, -*] ++(7, 0) |- (acc scl)
+(-5, -1.5) node[anchor=east] {11 SDA} -- (bar sda)
+(-5, -1.5) to[short, -*] ++(6.5, 0) |- (acc sda)
 
-(-5, -3.5) node[anchor=east] {0} to[leDo, -*] ++(5,0)
-(-5, -4.5) node[anchor=east] {$\sim1$} to[leDo, -*] ++(5,0)
-(-5, -5.5) node[anchor=east] {$\sim2$} to[leDo, -*] ++(5,0)
-(-5, -6.5) node[anchor=east] {$\sim3$} to[leDo] ++(5,0) -- (0, -3.5) to[R=220 $\Omega$] (0,-1.5) to[short, -*] (0,0.5)
+(-5, -7.5) node[anchor=east] {9 SCK} -- (-2, -7.5) node[anchor=west] {Ctrl}
+(-1, 1.5) to[short, *-] (-1, -7) node[anchor=north] {Pwr} 
+(0, 1.5) to[short, *-] (0, -7) node[anchor=north] {Gnd} 
+
+(-5, -3.5) node[anchor=east] {$\sim2$} to[leDo, -*] ++(3,0)
+(-5, -4.5) node[anchor=east] {$\sim3$} to[leDo, -*] ++(3,0)
+(-5, -5.5) node[anchor=east] {$\sim4$} to[leDo, -*] ++(3,0)
+(-5, -6.5) node[anchor=east] {$\sim5$} to[leDo] ++(3,0) -- ++(0, 3) to[R=220 $\Omega$] ++(0, 2) to[short, -*] ++(0,2)
 ;
 \end{circuitikz}
 }
 \end{figure}
 \subsection*{Pinmap}
-\begin{table}[h!]
+\begin{table}[H]
 \begin{tabular}{llll}
 Printed name & Compiler name & Variable name & Use \\
 \hline
 $V_{cc}$ & n/a & n/a & Power supply voltage \\
 GND & n/a & n/a & Ground \\
-SCL
+12 SCL & n/a & n/a & Clock signal for I$^2$C \\
+11 SDA & n/a & n/a & Data signal for I$^2$C \\
+9 SCK & 9 & SERVO\_PIN & Signal for parachute servo \\
+$\sim2$ & 2 & LED\_PIN & Status LED \\
+$\sim3$ & 3 & ERROR\_LED\_PIN & Error LED \\
+$\sim4$ & 4 & LAUNCH\_LED\_PIN & Launch LED \\
+$\sim5$ & 5 & CARD\_LED\_PIN & Card LED \\
+
 \end{tabular}
 \end{table}
+
+\section*{Software}
+
 \end{document}
  
