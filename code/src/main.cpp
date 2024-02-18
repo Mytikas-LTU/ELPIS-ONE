@@ -80,34 +80,6 @@ void flash(int times) {
     }
 }
 
-//prints a vec3 to serial. Was this comment necessary? probably not
-void printVec3(char *vecName, vec3 vec, bool lineBreak) {
-    Serial.print(vecName);
-    Serial.print("\tx: ");
-    Serial.print(vec.x);
-    Serial.print(",\ty: ");
-    Serial.print(vec.y);
-    Serial.print(",\tz: ");
-    Serial.print(vec.z);
-    if(lineBreak)
-        Serial.println();
-}
-
-//print a quaternion to Serial. Do I really need to explain these
-void printQuat(char *quatName, quat _quat, bool lineBreak){
-    Serial.print(quatName);
-    Serial.print(",\tr: ");
-    Serial.print(_quat.r);
-    Serial.print(",\ti: ");
-    Serial.print(_quat.i);
-    Serial.print(",\tj: ");
-    Serial.print(_quat.j);
-    Serial.print(",\tk: ");
-    Serial.print(_quat.k);
-    if(lineBreak)
-        Serial.println();
-}
-
 void setup() {
     long int boottime = millis();
     float pressures = 0;
@@ -324,22 +296,11 @@ void loop() {
 #endif
 
 #if ENABLE_ACCELEROMETER 
-    //printVec3("Acceleration vector", acc, true);
 
-    //printQuat("Rotation Vector", rot, true);
+flight_data.acc.print("Local Acceleration", true);
+flight_data.rotAcc.print("Global Acceleration", true);
+flight_data.rot.print("Rotation Vector", true);
 
-    //printQuat("Rotation Vector", trot.R, trot.I, trot.J, trot.K, true);
-
-    //printVec3("Rotated Acceleration", racc.x, racc.y, racc.z, true);
-/*
-    Serial.print("xr: ");
-    Serial.print(vec.xr);                        Serial.print("\t");
-    Serial.print("yr: ");
-    Serial.print(vec.yr);                        Serial.print("\t");
-    Serial.print("zr: ");
-    Serial.print(vec.zr);                        Serial.print("\t");*/
-
-    
 #endif
 /*    Serial.println();
     Serial.print(written);

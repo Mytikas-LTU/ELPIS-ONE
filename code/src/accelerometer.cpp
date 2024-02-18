@@ -23,8 +23,8 @@ bool Accelerometer::SetReports() {
 
 Accelerometer::Accelerometer(){
     //Initialize the values
-    acc = vec3{0.0, 0.0, 0.0};
-    rot = quat{0.0, 0.0, 0.0, 0.0};
+    acc = vec3(0.0,0.0,0.0);
+    rot = quat(0.0, 0.0, 0.0, 0.0);
 
     //initialize the BNO
     Serial.println("Init BNO085!");
@@ -45,19 +45,6 @@ Accelerometer::Accelerometer(){
     Serial.println("BNO085 Initialized");
 }
 
-
-//The Hamilton Product, gracefully copied from wikipedia, equates to q1*q2
-quat multiply_quat(quat q1, quat q2) {
-    float r = q1.r*q2.r - q1.i*q2.i - q1.j*q2.j - q1.k*q2.k;
-    float i = q1.r*q2.i + q1.i*q2.r + q1.j*q2.k - q1.k*q2.j;
-    float j = q1.r*q2.j - q1.i*q2.k + q1.j*q2.r + q1.k*q2.i;
-    float k = q1.r*q2.k + q1.i*q2.j - q1.j*q2.i + q1.k*q2.r;
-    return quat{r, i, j, k};
-}
-
-quat invert_quat(quat q){
-    return{q.r, -q.i, -q.j, -q.k};
-}
 
 void Accelerometer::getData(telemetry* data){
     if(setupError)
@@ -109,16 +96,6 @@ void Accelerometer::getData(telemetry* data){
     data->rot = rot;
 
     //rotate the acceleration vector
-    quat tempAcc = {0, acc.x, acc.y, acc.z};
-    quat q = rot;
-    quat q_ = invert_quat(rot);
-
-    quat t = multiply_quat(q,tempAcc);
-    quat rotAcc = multiply_quat(t,q_);
-    vec3 racc;
-
-    racc.x = rotAcc.i;
-    racc.y = rotAcc.j;
-    racc.z = rotAcc.k;
+    vec3 racc = acc.rotate(rot);
     data->rotAcc = racc;
 }
