@@ -14,9 +14,7 @@
 
 #include <Wire.h>
 #include <SPI.h>
-#include <Adafruit_BMP280.h>
 #include <SD.h>
-#include <Adafruit_BNO08x.h>
 #include<Servo.h>
 #include "stage_recognition.h"
 #include "accelerometer.h"
@@ -162,9 +160,6 @@ void setup() {
 }
 
 void loop() {
-    float temp,
-          alt,
-          pres;
     int written;
     digitalWrite(LED_PIN,HIGH);
 
