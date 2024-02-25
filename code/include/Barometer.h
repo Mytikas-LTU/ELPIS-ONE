@@ -3,6 +3,8 @@
 
     author: Isak H, Aurora Å/
 */
+#ifndef __BAROMETER__
+#define __BAROMETER__
 
 #include<stage_recognition.h>
 #include<Adafruit_BMP280.h>
@@ -16,3 +18,5 @@ class Barometer{
     private:
         Adafruit_BMP280 bmp;
 };
+
+#endif

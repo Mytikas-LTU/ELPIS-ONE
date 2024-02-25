@@ -19,9 +19,12 @@ bool Accelerometer::SetReports() {
     return true;
 }
 
+
+
 Accelerometer::Accelerometer(){
+#if ENABLE_ACCELEROMETER
     //Initialize the values
-    acc = Vec3(0.0,0.0,0.0);
+    acc = Vec3(0.0, 0.0, 0.0);
     rot = Quat(0.0, 0.0, 0.0, 0.0);
 
     //initialize the BNO
@@ -41,10 +44,14 @@ Accelerometer::Accelerometer(){
     }
     delay(1000);
     Serial.println("BNO085 Initialized");
+#else  
+    Serial.println("Accelerometer Disabled");
+#endif
 }
 
 
 void Accelerometer::getData(telemetry* data){
+#if ENABLE_ACCELEROMETER
     if(setupError)
         return;
 
@@ -96,4 +103,5 @@ void Accelerometer::getData(telemetry* data){
     //rotate the acceleration vector
     Vec3 racc = acc.rotate(rot);
     data->rotAcc = racc;
+#endif
 }

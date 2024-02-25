@@ -5,6 +5,7 @@
 const int pressureSamples = 10; // do better
 
 Barometer::Barometer(){
+#if ENABLE_BAROMETER
     Serial.println("Initializing BMP280");
     flash(1);
     delay(flashTime*3);
@@ -22,9 +23,15 @@ Barometer::Barometer(){
                     Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                     Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
     Serial.println("BMP280 initialized!");
+#else 
+    Serial.println("Barometer disabled");
+#endif
 }
 
+
+
 float Barometer::calibrate(){
+#if ENABLE_BAROMETER
     float pressures = 0;
     Serial.print("Calibrating pressure at ground level");
     for(int i=0; i<pressureSamples; i++) {
@@ -41,10 +48,18 @@ float Barometer::calibrate(){
     Serial.print(base_pres);
     Serial.println(" hPa");
     return base_pres;
+#else
+    Serial.println("Pressure calibration disabled");
+    return 0.0
+#endif
 }
 
+
+
 void Barometer::getData(telemetry* tel){
+#if ENABLE_BAROMETER
     tel->temp = bmp.readTemperature();
     tel->pres = bmp.readPressure();
     tel->alt = bmp.readAltitude(tel->base_pres);
+#endif
 }
