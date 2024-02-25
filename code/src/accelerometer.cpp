@@ -42,6 +42,7 @@ Accelerometer::Accelerometer(){
         digitalWrite(ERROR_LED_PIN, HIGH);
         setupError = true;
     }
+    setupError = false;
     delay(1000);
     Serial.println("BNO085 Initialized");
 #else  
