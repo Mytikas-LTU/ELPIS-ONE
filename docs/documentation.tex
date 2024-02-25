@@ -35,7 +35,7 @@
 \begin{tabular}{ll}
 Microcontroller & Arduino MKR Zero \\
 Barometer & BMP 280 \\
-Accelerometer & MPU 5060 \\
+Accelerometer & BNO 085 \\
 Servo & \\
 \end{tabular}
 \end{table}
@@ -58,7 +58,7 @@ Servo & \\
 }
 
 \sensor(5.5,0){BMP-280}{bar}
-\sensor(5.5,-6){MPU-5060}{acc}
+\sensor(5.5,-6){BNO-085}{acc}
 \draw(-10,2.5) rectangle (-5, -8) (-7.5, -2.5) node[anchor=south] {Arduino MKR Zero};
 \draw(-2, -7) rectangle (1, -8) (-0.5, -7.5) node[anchor=north] {Servo};
 \draw
