@@ -135,7 +135,7 @@ the axis (x,y,z) would look like
 \begin{equation}
 	Q=cos\frac{\theta}{2} + xsin\frac{\theta}{2}\mathbf{i} + ysin\frac{\theta}{2}\mathbf{j} + zsin\frac{\theta}{2}\mathbf{k}
 \end{equation}
-as a quaternion.
+as a quaternion. A rotation quaternion should have a magnitude 1, which is accomplished when the rotation axis is normalized.
 
 \paragraph*{Constructors}
 There are two constructors, one without arguments, which returns a zero \verb|quat|, and one with four arguments. The four arguments are one for each component of the vector,
