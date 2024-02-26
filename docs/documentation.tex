@@ -108,7 +108,6 @@ $\sim5$ & 5 & CARD\_LED\_PIN & Card LED \\
 The Accelerometer class's public interface has a constructor and a \verb|getData()| method. The contructor initializes the accelerometer, and sets the appropriate values.
 the getData method takes a pointer to a telemetry struct as an argument. It reads values from the accelerometer (Bno085), processes them and writes them to the \verb|telemetry| instance.
 
-\subsubsection*{Private parts}
 \paragraph*{Constructor}
 The constructor begins by initializing most of the members. It then repeatedly tries to start the BNO, and lights the Error LED during failure. It then repeatedly attempts
 to set the desired reports. If it were to fail, the Error LED is lit until success.
@@ -118,6 +117,18 @@ to set the desired reports. If it were to fail, the Error LED is lit until succe
 reports in a while loop. After that it checks if a read value is zero. This happens sometimes, we don't know why. If it is zero, then the last nonzero value is put in its place.
 This is why the next step is writing the \verb|trot| and \verb|tacc| values to \verb|acc| and \verb|rot| members. \verb|acc| and \verb|rot| are then written to the \verb|telemetry| instance.
 A vector \verb|racc| is then created by rotating \verb|acc| by \verb|rot|. It is also written to the \verb|telemetry| instance.
+
+\subsubsection*{Private parts}
+\paragraph*{Members}
+There are a couple of private members. The \verb|acc| stores the last read local acceleration. This is used to handle the case when the zero vector is read. The \verb|quat| field 
+used to store the last read rotation, for the same reason as the \verb|acc| field. The bool \verb|setupError| indicates if something went wrong durgin setup. It should never be true,
+since the setup runs until it suceeds. The \verb|sensor| field is simply the sensor object, and \verb|sensorValue| holds the values from the sensor.
+
+\paragraph*{setReports()}
+The \verb|setReports()| function is used to set the desired reports from the sensor. It gets called from the constructor, and form \verb|getData()| when the sensor was reset. Since it
+sometimes fails to set all the reports it get called until it suceeds in the constructor, but in \verb|getData()| we need to move on to the next iteration fairly quickly, so there is 
+no time to call it for 5 seconds. Currently the only reports that are set are \verb|SH2_ROTATION_VECTOR| and \verb|SH2_ACCELEROMETER|. These correspond to the rotation vector and local
+acceleration of the sensor. For more information on these reports, see the \verb|SH-2-Reference-Manual-v1.2.pdf.|
 
 \subsection{Vector Types}
 There are currently two vector types, quaternions(\verb|Quat|) and three dimensional vectors(\verb|Vec3|).
