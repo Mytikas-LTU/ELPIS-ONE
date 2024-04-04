@@ -25,8 +25,6 @@ Barometer barom_sensor;
 Accelerometer acc_sensor;
 Storage storage;
 
-const int chipSelect = SS1;
-
 Servo shuteServo;
 
 struct rot_acc {
@@ -74,9 +72,9 @@ void setup() {
     Serial.println("Servo disabled");
 #endif
 
-    acc_sensor = Accelerometer();
-    barom_sensor = Barometer();
-    storage = Storage();
+    acc_sensor.init();
+    barom_sensor.init();
+    storage.init();
 
     flight_data.base_pres = barom_sensor.calibrate();
     storage.writeHeader(&flight_data);
@@ -100,7 +98,7 @@ void loop() {
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
-    if (flight_data.acc.x < -12.00 && begin_flight_time == 0)
+    if (flight_data.acc.z > 12.00 && begin_flight_time == 0)
     {
         Serial.println("begin flight!!----------------------------------------");
         Serial.println("begin flight!!----------------------------------------");

@@ -11,8 +11,10 @@ author: Isak Henningsson
 
 class Accelerometer {
     public:
-        //initialize the accelerometer
+        //Is called on object instantiation
         Accelerometer();
+        //initialize the accelerometer
+        void init();
         //put all the data into telemetry struct
         void getData(telemetry* data);
         

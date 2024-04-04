@@ -5,7 +5,11 @@
 
 const int chipSelect = SS1;
 
-Storage::Storage() {
+Storage::Storage(){
+    ptr = 0;
+}
+
+void Storage::init() {
 #if ENABLE_CARDWRITER
     Serial.println("Initializing SD-card");
     flash(2);
@@ -33,7 +37,6 @@ Storage::Storage() {
         file = SD.open(filename, O_RDWR | O_CREAT | O_APPEND);
     }
     Serial.println("File open!");
-    ptr = 0;
 #else
     Serial.println("Logging disabled");
 #endif

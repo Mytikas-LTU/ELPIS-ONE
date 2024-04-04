@@ -4,7 +4,13 @@
 
 const int pressureSamples = 10; // do better
 
+//yeah, shits empty, fight me
 Barometer::Barometer(){
+    //SIKE, its not empty after all
+}
+
+
+void Barometer::init(){
 #if ENABLE_BAROMETER
     Serial.println("Initializing BMP280");
     flash(1);

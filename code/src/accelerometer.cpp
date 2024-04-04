@@ -20,13 +20,17 @@ bool Accelerometer::SetReports() {
 }
 
 
-
 Accelerometer::Accelerometer(){
-#if ENABLE_ACCELEROMETER
     //Initialize the values
     acc = Vec3(0.0, 0.0, 0.0);
     rot = Quat(0.0, 0.0, 0.0, 0.0);
+    setupError = false;
+}
 
+
+
+void Accelerometer::init(){
+#if ENABLE_ACCELEROMETER
     //initialize the BNO
     Serial.println("Init BNO085!");
     while(!sensor.begin_I2C()){
@@ -42,7 +46,7 @@ Accelerometer::Accelerometer(){
         digitalWrite(ERROR_LED_PIN, HIGH);
         setupError = true;
     }
-    setupError = false;
+
     delay(1000);
     Serial.println("BNO085 Initialized");
 #else  
@@ -74,7 +78,7 @@ void Accelerometer::getData(telemetry* data){
             tacc.y = sensorValue.un.accelerometer.y;
             tacc.z = sensorValue.un.accelerometer.z;
         }
-        if(sensorValue.sensorId == SH2_ARVR_STABILIZED_RV){
+        if(sensorValue.sensorId == SH2_ROTATION_VECTOR){
             //you might think this is wrong, but trust me, the vector is messed up. DAMN AND BLAST THE AUTHORS OF THE BNO08X LIBRARY!! actually nvm they fixed it
             trot.r = sensorValue.un.rotationVector.real;
             trot.i = sensorValue.un.rotationVector.i;

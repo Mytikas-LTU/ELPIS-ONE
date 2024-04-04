@@ -7,6 +7,7 @@
 class Storage{
     public:
         Storage();
+        void init();
         void writeHeader(telemetry* data);
         void write(telemetry* data);
 

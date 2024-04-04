@@ -12,6 +12,7 @@
 class Barometer{
     public:
         Barometer();
+        void init();
         void getData(telemetry* tel);
         float calibrate();
     
