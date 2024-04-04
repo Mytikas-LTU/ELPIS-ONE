@@ -4,10 +4,10 @@
  ***************************************************************************/
 
 
-#define ENABLE_BAROMETER 0
+#define ENABLE_BAROMETER 1
 #define ENABLE_ACCELEROMETER 1
-#define ENABLE_CARDWRITER 1
-#define ENABLE_LOGGING 1
+#define ENABLE_CARDWRITER 0
+#define ENABLE_LOGGING 0
 #define ENABLE_SERVO 1
 #define ENABLE_DUMMYDATA 0
 
@@ -327,7 +327,7 @@ void loop() {
             tacc.y = sensorValue.un.accelerometer.y;
             tacc.z = sensorValue.un.accelerometer.z;
         }
-        if(sensorValue.sensorId == SH2_ARVR_STABILIZED_RV){
+        if(sensorValue.sensorId == SH2_ROTATION_VECTOR){
             //you might think this is wrong, but trust me, the vector is messed up. DAMN AND BLAST THE AUTHORS OF THE BNO08X LIBRARY!! actually nvm they fixed it
             trot.R = sensorValue.un.rotationVector.real;
             trot.I = sensorValue.un.rotationVector.i;
@@ -363,7 +363,7 @@ void loop() {
     racc.x = rotAcc.I;
     racc.y = rotAcc.J;
     racc.z = rotAcc.K;
-    flight_data.rotAcc = racc;
+    flight_data.rot_acc = racc;
 #endif
 
 #if ENABLE_BAROMETER
@@ -375,7 +375,7 @@ void loop() {
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
-    if (flight_data.acc.x < -12.00 && begin_flight_time == 0)
+    if (flight_data.acc.z > 12.00 && begin_flight_time == 0)
     {
         Serial.println("begin flight!!----------------------------------------");
         Serial.println("begin flight!!----------------------------------------");
@@ -445,7 +445,7 @@ void loop() {
 
     //printQuat("Rotation Vector", trot.R, trot.I, trot.J, trot.K, true);
 
-    printVec3("Rotated Acceleration", racc.x, racc.y, racc.z, true);
+    printVec3("Rotated Acceleration", racc, true);
 /*
     Serial.print("xr: ");
     Serial.print(vec.xr);                        Serial.print("\t");
