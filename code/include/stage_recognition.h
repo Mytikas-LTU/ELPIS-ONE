@@ -124,7 +124,7 @@ struct telemetry
   Vec3 acc;                   //3*4 bytes
 
   //the GLOBAL acceleration of the rocket, highly untested
-  Vec3 rotAcc;               //3*4bytes THIS WAS NOT IN THE CODE THAT FLEW
+  Vec3 rotAcc;                //3*4bytes THIS WAS NOT IN THE CODE THAT FLEW
 
   //the rotation of the rocket
   Quat rot;                   //4*4 bytes

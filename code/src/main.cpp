@@ -18,7 +18,7 @@
 #define BMP_CS   (10)
 #define SERVO_PIN (9)
 
-#define SERVO_OPEN 180
+#define SERVO_OPEN 130
 #define SERVO_LOCKED 90
 
 Barometer barom_sensor;

@@ -55,7 +55,7 @@ void Storage::writeHeader(telemetry* data){
     file.flush();
     flash(4);
     digitalWrite(LED_PIN,LOW);
-#else 
+#else
     Serial.println("Logging disabled, closing file");
     file.close();
 #endif
@@ -64,10 +64,9 @@ void Storage::writeHeader(telemetry* data){
 void Storage::write(telemetry* data){
 #if ENABLE_LOGGING
     ptr += 1;
-    //file.println(flight_data.pres);
-    if(ptr >= 80) {
+    file.write((byte *) data, sizeof(*data));
+    if(ptr >= 10) {
         digitalWrite(CARD_LED_PIN,HIGH);
-//        file.write(&floatBuffer, (size_t)ptr);
         file.flush();
         Serial.println("Written to file!");
         ptr = 0;
