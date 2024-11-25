@@ -2,7 +2,6 @@
 #include<Barometer.h>
 #include<basicIO.h>
 
-const int pressureSamples = 10; // do better
 
 //yeah, shits empty, fight me
 Barometer::Barometer(){
@@ -40,7 +39,7 @@ float Barometer::calibrate(){
 #if ENABLE_BAROMETER
     float pressures = 0;
     Serial.print("Calibrating pressure at ground level");
-    for(int i=0; i<pressureSamples; i++) {
+    for(int i=0; i<SAMPLES; i++) {
         Serial.print(".");
         pressures += bmp.readPressure();
         delay(500);
@@ -49,7 +48,7 @@ float Barometer::calibrate(){
         digitalWrite(LED_PIN,LOW);
     }
     Serial.println();
-    float base_pres = (pressures/pressureSamples)/100;
+    float base_pres = (pressures/SAMPLES)/100;
     Serial.print("Calibrated at ");
     Serial.print(base_pres);
     Serial.println(" hPa");
@@ -67,5 +66,14 @@ void Barometer::getData(telemetry* tel){
     tel->temp = bmp.readTemperature();
     tel->pres = bmp.readPressure();
     tel->alt = bmp.readAltitude(tel->base_pres);
+#endif
+}
+
+int Barometer::poll() {
+#if ENABLE_BAROMETER
+    Wire.beginTransmission(BAROM_ADDR);
+    return Wire.endTransmission();
+#else
+    return 0;
 #endif
 }

@@ -54,6 +54,7 @@ void setup() {
     digitalWrite(LAUNCH_LED_PIN,LOW);
     digitalWrite(ERROR_LED_PIN,LOW);
     Serial.begin(9600);
+    Wire.begin();
 
     while (!Serial && millis() - boottime < 2000) {
         yield();
@@ -93,8 +94,11 @@ void loop() {
     flight_data.time = millis();
 
     acc_sensor.getData(&flight_data);
-    barom_sensor.getData(&flight_data);
-
+    if(barom_sensor.poll()) {
+        Serial.println("barometer is fucked");
+    } else {
+        barom_sensor.getData(&flight_data);
+    }
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
@@ -129,7 +133,7 @@ void loop() {
 
 #if ENABLE_BAROMETER || ENABLE_DUMMYDATA
 
-   Serial.print(flight_data.pres - flight_data.base_pres*100);
+    Serial.print(flight_data.pres - flight_data.base_pres*100);
     Serial.print(" Pa, ");
 
 
@@ -143,7 +147,7 @@ void loop() {
     Serial.print(flight_data.flight_time);
     Serial.print("ms, ");
 
-    
+
 
     oldalt = flight_data.alt;
 
@@ -151,9 +155,9 @@ void loop() {
 
 #if ENABLE_ACCELEROMETER 
 
-flight_data.acc.print("Local Acceleration", true);
-flight_data.rotAcc.print("Global Acceleration", true);
-flight_data.rot.print("Rotation Vector", true);
+    flight_data.acc.print("Local Acceleration", true);
+    flight_data.rotAcc.print("Global Acceleration", true);
+    flight_data.rot.print("Rotation Vector", true);
 
 #endif
 /*    Serial.println();

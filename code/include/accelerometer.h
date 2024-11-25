@@ -17,6 +17,7 @@ class Accelerometer {
         void init();
         //put all the data into telemetry struct
         void getData(telemetry* data);
+        int poll();
         
         private:
             Vec3 acc;
