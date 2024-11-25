@@ -8,6 +8,7 @@ author: Isak Henningsson
 #include <stage_recognition.h>
 #include <Adafruit_BNO08x.h>
 
+#define ACC_ADDR 74
 
 class Accelerometer {
     public:

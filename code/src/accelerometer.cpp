@@ -113,3 +113,15 @@ void Accelerometer::getData(telemetry* data){
 
 
 
+int Accelerometer::poll() {
+#if ENABLE_ACCELEROMETER
+    Wire.beginTransmission(ACC_ADDR);
+    return Wire.endTransmission();
+#else
+    return 0;
+#endif
+}
+
+
+
+

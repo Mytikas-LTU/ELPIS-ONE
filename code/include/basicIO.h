@@ -10,7 +10,7 @@ const uint8_t LAUNCH_LED_PIN = 4; // Define the LED-pin
 const uint8_t CARD_LED_PIN = 5; // Define the LED-pin
 
 #define ENABLE_BAROMETER 1
-#define ENABLE_ACCELEROMETER 0
+#define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 0
 #define ENABLE_LOGGING 0
 #define ENABLE_SERVO 0

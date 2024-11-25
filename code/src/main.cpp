@@ -93,9 +93,15 @@ void loop() {
 
     flight_data.time = millis();
 
-    acc_sensor.getData(&flight_data);
+
+    if(acc_sensor.poll()) {
+        Serial.print("Accelerometer is fucked ");
+    } else {
+        acc_sensor.getData(&flight_data);
+    }
+
     if(barom_sensor.poll()) {
-        Serial.println("barometer is fucked");
+        Serial.print("barometer is fucked ");
     } else {
         barom_sensor.getData(&flight_data);
     }
@@ -168,6 +174,7 @@ void loop() {
     //Serial.println();
     // constant time loop
     digitalWrite(LED_PIN,LOW);
+    Serial.println();
     while(millis()-lastLoop < 1000/sampleRate) {}
     lastLoop = millis();
 }
