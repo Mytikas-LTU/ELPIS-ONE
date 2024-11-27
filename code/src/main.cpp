@@ -11,7 +11,6 @@
 #include "storage.h"
 #include "basicIO.h"
 
-
 #define BMP_SCK  (13)
 #define BMP_MISO (12)
 #define BMP_MOSI (11)
@@ -43,7 +42,6 @@ int prevStage = 1;
 struct telemetry flight_data;
 long begin_flight_time = 0;
 int in_flight = 0;
-
 
 void setup() {
     long int boottime = millis();
@@ -95,8 +93,6 @@ void loop() {
     acc_sensor.getData(&flight_data);
     barom_sensor.getData(&flight_data);
 
-
-
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
@@ -116,7 +112,6 @@ void loop() {
         flight_data.flight_time = millis() - begin_flight_time;
     }
     emergency_chute(&flight_data, prevStage);
-
 
     storage.write(&flight_data);
 
@@ -144,8 +139,6 @@ void loop() {
 
     Serial.print(flight_data.flight_time);
     Serial.print("ms, ");
-
-
 
     oldalt = flight_data.alt;
 
@@ -176,9 +169,6 @@ flight_data.rotAcc.print("Global Acceleration", true);
 flight_data.rot.print("Rotation Vector", true);
 
 #endif
-
-
-
 
 /*    Serial.println();
     Serial.print(written);
