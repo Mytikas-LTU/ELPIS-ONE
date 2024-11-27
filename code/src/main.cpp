@@ -20,7 +20,6 @@
 
 #define SERVO_OPEN 130
 #define SERVO_LOCKED 90
-#define BUFFER_SIZE 10  // Size of flight data buffer
 Barometer barom_sensor;
 Accelerometer acc_sensor;
 Storage storage;
@@ -33,7 +32,7 @@ struct rot_acc {
     float zr;
 } vec;
 
-
+int max_alt = 0;
 float oldalt;
 float basePressure;
 long lastLoop;
@@ -45,10 +44,6 @@ struct telemetry flight_data;
 long begin_flight_time = 0;
 int in_flight = 0;
 
-// Array to store the flight data
-flight_data flight_data_buffer[BUFFER_SIZE];
-// Index to track the position where new data is added
-int current_buffer_index = 0;
 
 void setup() {
     long int boottime = millis();
@@ -154,6 +149,22 @@ void loop() {
 
     oldalt = flight_data.alt;
 
+    if flight_data.alt > max_alt {
+        max_alt = flight_data.alt;
+    }
+    if flight_data.alt < max_alt {
+        flight_data.parachute_state = 1;
+    }
+
+#endif
+
+#if ENABLE_SERVO && ENABLE_BAROMETER
+    if flight_data.alt > max_alt {
+        max_alt = flight_data.alt;
+    }
+    if flight_data.alt + 3 < max_alt {
+        flight_data.parachute_state = 1;
+    }
 #endif
 
 #if ENABLE_ACCELEROMETER
@@ -164,8 +175,8 @@ flight_data.rot.print("Rotation Vector", true);
 
 #endif
 
-flight_data_buffer[current_index] = flight_data;
-current_index = (current_index + 1) % BUFFER_SIZE;
+
+
 
 /*    Serial.println();
     Serial.print(written);
