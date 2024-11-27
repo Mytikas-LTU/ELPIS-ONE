@@ -31,7 +31,8 @@ struct rot_acc {
     float zr;
 } vec;
 
-float max_alt = 0;
+float max_alt_hight = 0;
+float max_alt_time = 0;
 float oldalt;
 float basePressure;
 long lastLoop;
@@ -153,11 +154,12 @@ void loop() {
 
 #if ENABLE_SERVO && ENABLE_BAROMETER
     // Update maximum altitude if higher than the current maximum
-    if (flight_data.alt > max_alt) {
-        max_alt = flight_data.alt;
+    if (flight_data.alt > max_alt_hight) {
+        max_alt_hight = flight_data.alt;
+        max_alt_time = flight_data.flight_time;
     }
-    // Check if the altitude has dropped significantly (3m)
-    if (flight_data.alt + 3 < max_alt) {
+    // Check if the altitude has dropped significantly (3m) during a 1s time frame
+    if (flight_data.alt + 3 < max_alt_hight && max_alt_time - flight_data.time <= 1.5 && flight_data.parachute_state == 0) { //&& in_flight == 1
         flight_data.parachute_state = 1; // Deploy parachute
     }
 #endif
