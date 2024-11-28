@@ -1,5 +1,5 @@
 /***************************************************************************
-    Author: Aurora Å, Isak H, Elias R, Alexander B
+    Author: Aurora Å, Isak H, Elias R, Alexander B, Gustav M
     Full telemetry and logging suite.
  ***************************************************************************/
 #include <Wire.h>
@@ -17,8 +17,11 @@
 #define BMP_CS   (10)
 #define SERVO_PIN (9)
 
+// Define constants in the code
 #define SERVO_OPEN 130
 #define SERVO_LOCKED 90
+#define FALL_DIST 3
+
 Barometer barom_sensor;
 Accelerometer acc_sensor;
 Storage storage;
@@ -31,7 +34,7 @@ struct rot_acc {
     float zr;
 } vec;
 
-float max_alt_hight = 0;
+float max_alt_height = 0;
 float max_alt_time = 0;
 float oldalt;
 float basePressure;
@@ -43,8 +46,6 @@ int prevStage = 1;
 struct telemetry flight_data;
 long begin_flight_time = 0;
 int in_flight = 0;
-int accAlive = 1;
-int barAlive = 1;
 
 void setup() {
     long int boottime = millis();
@@ -157,23 +158,16 @@ void loop() {
 
     oldalt = flight_data.alt;
 
-    if flight_data.alt > max_alt {
-        max_alt = flight_data.alt;
-    }
-    if flight_data.alt < max_alt {
-        flight_data.parachute_state = 1;
-    }
-
 #endif
 
 #if ENABLE_SERVO && ENABLE_BAROMETER
     // Update maximum altitude if higher than the current maximum
-    if (flight_data.alt > max_alt_hight) {
-        max_alt_hight = flight_data.alt;
+    if (flight_data.alt > max_alt_height) {
+        max_alt_height = flight_data.alt;
         max_alt_time = flight_data.flight_time;
     }
     // Check if the altitude has dropped significantly (3m) during a 1s time frame
-    if (flight_data.alt + 3 < max_alt_hight && max_alt_time - flight_data.time <= 1.5 && flight_data.parachute_state == 0) { //&& in_flight == 1
+    if (flight_data.alt + FALL_DIST < max_alt_height && flight_data.parachute_state == 0) { //&& in_flight == 1
         flight_data.parachute_state = 1; // Deploy parachute
     }
 #endif
