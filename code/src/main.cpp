@@ -44,6 +44,8 @@ int prevStage = 1;
 struct telemetry flight_data;
 long begin_flight_time = 0;
 int in_flight = 0;
+int accAlive = 1;
+int barAlive = 1;
 
 void setup() {
     long int boottime = millis();
@@ -95,13 +97,13 @@ void loop() {
 
 
     if(acc_sensor.poll()) {
-        Serial.print("Accelerometer is fucked ");
+        Serial.print("Lost connection with accelerometer ");
     } else {
         acc_sensor.getData(&flight_data);
     }
 
     if(barom_sensor.poll()) {
-        Serial.print("barometer is fucked ");
+        Serial.print("Lost connection with barometer ");
     } else {
         barom_sensor.getData(&flight_data);
     }
