@@ -11,7 +11,6 @@
 #include "storage.h"
 #include "basicIO.h"
 
-
 #define BMP_SCK  (13)
 #define BMP_MISO (12)
 #define BMP_MOSI (11)
@@ -20,7 +19,6 @@
 
 #define SERVO_OPEN 130
 #define SERVO_LOCKED 90
-#define BUFFER_SIZE 10  // Size of flight data buffer
 Barometer barom_sensor;
 Accelerometer acc_sensor;
 Storage storage;
@@ -33,7 +31,8 @@ struct rot_acc {
     float zr;
 } vec;
 
-
+float max_alt_hight = 0;
+float max_alt_time = 0;
 float oldalt;
 float basePressure;
 long lastLoop;
@@ -46,11 +45,6 @@ long begin_flight_time = 0;
 int in_flight = 0;
 int accAlive = 1;
 int barAlive = 1;
-
-// Array to store the flight data
-flight_data flight_data_buffer[BUFFER_SIZE];
-// Index to track the position where new data is added
-int current_buffer_index = 0;
 
 void setup() {
     long int boottime = millis();
@@ -113,6 +107,7 @@ void loop() {
         barom_sensor.getData(&flight_data);
     }
 
+
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
@@ -132,7 +127,6 @@ void loop() {
         flight_data.flight_time = millis() - begin_flight_time;
     }
     emergency_chute(&flight_data, prevStage);
-
 
     storage.write(&flight_data);
 
@@ -161,10 +155,27 @@ void loop() {
     Serial.print(flight_data.flight_time);
     Serial.print("ms, ");
 
-
-
     oldalt = flight_data.alt;
 
+    if flight_data.alt > max_alt {
+        max_alt = flight_data.alt;
+    }
+    if flight_data.alt < max_alt {
+        flight_data.parachute_state = 1;
+    }
+
+#endif
+
+#if ENABLE_SERVO && ENABLE_BAROMETER
+    // Update maximum altitude if higher than the current maximum
+    if (flight_data.alt > max_alt_hight) {
+        max_alt_hight = flight_data.alt;
+        max_alt_time = flight_data.flight_time;
+    }
+    // Check if the altitude has dropped significantly (3m) during a 1s time frame
+    if (flight_data.alt + 3 < max_alt_hight && max_alt_time - flight_data.time <= 1.5 && flight_data.parachute_state == 0) { //&& in_flight == 1
+        flight_data.parachute_state = 1; // Deploy parachute
+    }
 #endif
 
 #if ENABLE_ACCELEROMETER
@@ -174,9 +185,6 @@ void loop() {
     flight_data.rot.print("Rotation Vector", true);
 
 #endif
-
-flight_data_buffer[current_index] = flight_data;
-current_index = (current_index + 1) % BUFFER_SIZE;
 
 /*    Serial.println();
     Serial.print(written);
