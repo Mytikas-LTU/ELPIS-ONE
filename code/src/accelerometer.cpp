@@ -8,11 +8,11 @@
 //sets all the sensor outputs to recieve
 //for more information on the sh2 sensorValues refer to the sh2 reference manual(downloaded in docs folder)
 bool Accelerometer::SetReports() {
-    if(!sensor.enableReport(SH2_ROTATION_VECTOR, 1000000/sampleRate)) {
+    if(!sensor.enableReport(SH2_ROTATION_VECTOR, 1000000/(sampleRate*3))) {
         Serial.println("Could not enable rotation vector reports!");
         return false;
     }
-    if(!sensor.enableReport(SH2_ACCELEROMETER, 1000000/sampleRate)) {
+    if(!sensor.enableReport(SH2_ACCELEROMETER, 1000000/(sampleRate*2))) {
         Serial.println("Could not enable accelerometer reports!");
         return false;
     }
@@ -32,6 +32,7 @@ Accelerometer::Accelerometer(){
 void Accelerometer::init(){
 #if ENABLE_ACCELEROMETER
     //initialize the BNO
+    sensor = Adafruit_BNO08x(-1);
     Serial.println("Init BNO085!");
     while(!sensor.begin_I2C()){
         Serial.println("BNO init Error");
@@ -92,10 +93,12 @@ void Accelerometer::getData(telemetry* data){
     if(tacc.x == 0.0 && tacc.y == 0.0 && tacc.z == 0.0){
         tacc = acc;
         data->bnoMissed += 1;
+        Serial.println("Accelerometer missed");
     }
     if(trot.r == 0.0 && trot.i == 0.0 && trot.j == 0.0 && trot.k == 0.0){
         trot = rot;
         data->bnoMissed += 2;
+        Serial.println("Gyro missed");
     }
 
     acc = tacc;

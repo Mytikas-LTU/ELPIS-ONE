@@ -54,6 +54,7 @@ void setup() {
     digitalWrite(LAUNCH_LED_PIN,LOW);
     digitalWrite(ERROR_LED_PIN,LOW);
     Serial.begin(9600);
+    Wire.setClock(400000);
 
     while (!Serial && millis() - boottime < 2000) {
         yield();
@@ -98,7 +99,7 @@ void loop() {
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
-    if (flight_data.acc.z > 12.00 && begin_flight_time == 0)
+    if (flight_data.acc.y < -12.00 && begin_flight_time == 0)
     {
         Serial.println("begin flight!!----------------------------------------");
         Serial.println("begin flight!!----------------------------------------");
@@ -154,6 +155,7 @@ void loop() {
 flight_data.acc.print("Local Acceleration", true);
 flight_data.rotAcc.print("Global Acceleration", true);
 flight_data.rot.print("Rotation Vector", true);
+Serial.println();
 
 #endif
 /*    Serial.println();
