@@ -18,9 +18,10 @@
 #define SERVO_PIN (9)
 
 // Define constants in the code
-#define SERVO_OPEN 130
-#define SERVO_LOCKED 90
-#define FALL_DIST 3
+#define SERVO_OPEN 0
+#define SERVO_LOCKED 180
+#define FALL_DIST 1    // distance needed to fall
+#define ARM_DIST 2     // distance to arm parachute
 
 Barometer barom_sensor;
 Accelerometer acc_sensor;
@@ -46,6 +47,7 @@ int prevStage = 1;
 struct telemetry flight_data;
 long begin_flight_time = 0;
 int in_flight = 0;
+int parachute_arm = 0;
 
 void setup() {
     long int boottime = millis();
@@ -122,12 +124,13 @@ void loop() {
        begin_flight_time = millis();
        in_flight = 1;
     }
-    if (in_flight == 1)
-    {
+    if (parachute_arm) {
         digitalWrite(CARD_LED_PIN,HIGH);
+    }
+    if (in_flight == 1) {
         flight_data.flight_time = millis() - begin_flight_time;
     }
-    emergency_chute(&flight_data, prevStage);
+//    emergency_chute(&flight_data, prevStage);
 
     storage.write(&flight_data);
 
@@ -145,6 +148,8 @@ void loop() {
     Serial.print(flight_data.pres - flight_data.base_pres*100);
     Serial.print(" Pa, ");
 
+    Serial.print(flight_data.alt);
+    Serial.print(" m, ");
 
    // Serial.print("State of flight,");
    // Serial.print(prevStage);
@@ -152,6 +157,9 @@ void loop() {
     Serial.print("Parachute:");
     Serial.print(flight_data.parachute_state);
     Serial.print(", ");
+    if(parachute_arm) {
+        Serial.print("ARMED ");
+    }
 
     Serial.print(flight_data.flight_time);
     Serial.print("ms, ");
@@ -161,13 +169,16 @@ void loop() {
 #endif
 
 #if ENABLE_SERVO && ENABLE_BAROMETER
+    if(flight_data.alt >= ARM_DIST) {
+        parachute_arm = 1;
+    }
     // Update maximum altitude if higher than the current maximum
     if (flight_data.alt > max_alt_height) {
         max_alt_height = flight_data.alt;
         max_alt_time = flight_data.flight_time;
     }
     // Check if the altitude has dropped significantly (3m) during a 1s time frame
-    if (flight_data.alt + FALL_DIST < max_alt_height && flight_data.parachute_state == 0) { //&& in_flight == 1
+    if (flight_data.alt + FALL_DIST < max_alt_height && flight_data.parachute_state == 0 && parachute_arm) { //&& in_flight == 1
         flight_data.parachute_state = 1; // Deploy parachute
     }
 #endif

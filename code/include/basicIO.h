@@ -13,7 +13,7 @@ const uint8_t CARD_LED_PIN = 5; // Define the LED-pin
 #define ENABLE_ACCELEROMETER 1
 #define ENABLE_CARDWRITER 0
 #define ENABLE_LOGGING 0
-#define ENABLE_SERVO 0
+#define ENABLE_SERVO 1
 #define ENABLE_DUMMYDATA 0
 
 const char filename[10] = "tele.txt";
