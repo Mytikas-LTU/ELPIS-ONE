@@ -1,5 +1,5 @@
 /***************************************************************************
-    Author: Aurora Å, Isak H, Elias R, Alexander B
+    Author: Aurora Å, Isak H, Elias R, Alexander B, Gustav M
     Full telemetry and logging suite.
  ***************************************************************************/
 #include <Wire.h>
@@ -18,8 +18,11 @@
 #define BMP_CS   (10)
 #define SERVO_PIN (9)
 
-#define SERVO_OPEN 130
-#define SERVO_LOCKED 90
+// Define constants in the code
+#define SERVO_OPEN 0
+#define SERVO_LOCKED 180
+#define FALL_DIST 1    // distance needed to fall
+#define ARM_DIST 2     // distance to arm parachute
 
 Barometer barom_sensor;
 Accelerometer acc_sensor;
@@ -33,7 +36,8 @@ struct rot_acc {
     float zr;
 } vec;
 
-
+float max_alt_height = 0;
+float max_alt_time = 0;
 float oldalt;
 float basePressure;
 long lastLoop;
@@ -44,6 +48,7 @@ int prevStage = 1;
 struct telemetry flight_data;
 long begin_flight_time = 0;
 int in_flight = 0;
+int parachute_arm = 0;
 
 void setup() {
     long int boottime = millis();
@@ -54,6 +59,7 @@ void setup() {
     digitalWrite(LAUNCH_LED_PIN,LOW);
     digitalWrite(ERROR_LED_PIN,LOW);
     Serial.begin(9600);
+    Wire.begin();
     Wire.setClock(400000);
 
     while (!Serial && millis() - boottime < 2000) {
@@ -93,8 +99,19 @@ void loop() {
 
     flight_data.time = millis();
 
-    acc_sensor.getData(&flight_data);
-    barom_sensor.getData(&flight_data);
+
+    if(acc_sensor.poll()) {
+        Serial.print("Lost connection with accelerometer ");
+    } else {
+        acc_sensor.getData(&flight_data);
+    }
+
+    if(barom_sensor.poll()) {
+        Serial.print("Lost connection with barometer ");
+    } else {
+        barom_sensor.getData(&flight_data);
+    }
+
 
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
@@ -109,12 +126,13 @@ void loop() {
        begin_flight_time = millis();
        in_flight = 1;
     }
-    if (in_flight == 1)
-    {
+    if (parachute_arm) {
         digitalWrite(CARD_LED_PIN,HIGH);
+    }
+    if (in_flight == 1) {
         flight_data.flight_time = millis() - begin_flight_time;
     }
-    emergency_chute(&flight_data, prevStage);
+//    emergency_chute(&flight_data, prevStage);
 
 
     storage.write(&flight_data);
@@ -130,9 +148,11 @@ void loop() {
 
 #if ENABLE_BAROMETER || ENABLE_DUMMYDATA
 
-   Serial.print(flight_data.pres - flight_data.base_pres*100);
+    Serial.print(flight_data.pres - flight_data.base_pres*100);
     Serial.print(" Pa, ");
 
+    Serial.print(flight_data.alt);
+    Serial.print(" m, ");
 
    // Serial.print("State of flight,");
    // Serial.print(prevStage);
@@ -140,22 +160,37 @@ void loop() {
     Serial.print("Parachute:");
     Serial.print(flight_data.parachute_state);
     Serial.print(", ");
+    if(parachute_arm) {
+        Serial.print("ARMED ");
+    }
 
     Serial.print(flight_data.flight_time);
     Serial.print("ms, ");
-
-    
-
+  
     oldalt = flight_data.alt;
 
 #endif
 
+#if ENABLE_SERVO && ENABLE_BAROMETER
+    if(flight_data.alt >= ARM_DIST) {
+        parachute_arm = 1;
+    }
+    // Update maximum altitude if higher than the current maximum
+    if (flight_data.alt > max_alt_height) {
+        max_alt_height = flight_data.alt;
+        max_alt_time = flight_data.flight_time;
+    }
+    // Check if the altitude has dropped significantly (3m) during a 1s time frame
+    if (flight_data.alt + FALL_DIST < max_alt_height && flight_data.parachute_state == 0 && parachute_arm) { //&& in_flight == 1
+        flight_data.parachute_state = 1; // Deploy parachute
+    }
+#endif
+
 #if ENABLE_ACCELEROMETER 
 
-flight_data.acc.print("Local Acceleration", true);
-flight_data.rotAcc.print("Global Acceleration", true);
-flight_data.rot.print("Rotation Vector", true);
-Serial.println();
+    flight_data.acc.print("Local Acceleration", true);
+    flight_data.rotAcc.print("Global Acceleration", true);
+    flight_data.rot.print("Rotation Vector", true);
 
 #endif
 /*    Serial.println();
@@ -166,6 +201,7 @@ Serial.println();
     //Serial.println();
     // constant time loop
     digitalWrite(LED_PIN,LOW);
+    Serial.println();
     while(millis()-lastLoop < 1000/sampleRate) {}
     lastLoop = millis();
 }

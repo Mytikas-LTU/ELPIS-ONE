@@ -8,8 +8,9 @@ author: Isak Henningsson
 #include <stage_recognition.h>
 #include <Adafruit_BNO08x.h>
 
-#define BNO08X_RESET -1
 
+#define ACC_ADDR 74
+#define BNO08X_RESET -1
 
 class Accelerometer {
     public:
@@ -19,6 +20,7 @@ class Accelerometer {
         void init();
         //put all the data into telemetry struct
         void getData(telemetry* data);
+        int poll();
         
         private:
             Vec3 acc;
