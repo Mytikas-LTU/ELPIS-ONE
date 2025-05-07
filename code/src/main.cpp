@@ -11,6 +11,7 @@
 #include "storage.h"
 #include "basicIO.h"
 
+
 #define BMP_SCK  (13)
 #define BMP_MISO (12)
 #define BMP_MOSI (11)
@@ -59,6 +60,7 @@ void setup() {
     digitalWrite(ERROR_LED_PIN,LOW);
     Serial.begin(9600);
     Wire.begin();
+    Wire.setClock(400000);
 
     while (!Serial && millis() - boottime < 2000) {
         yield();
@@ -114,7 +116,7 @@ void loop() {
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
-    if (flight_data.acc.z > 12.00 && begin_flight_time == 0)
+    if (flight_data.acc.y < -12.00 && begin_flight_time == 0)
     {
         Serial.println("begin flight!!----------------------------------------");
         Serial.println("begin flight!!----------------------------------------");
@@ -131,6 +133,7 @@ void loop() {
         flight_data.flight_time = millis() - begin_flight_time;
     }
 //    emergency_chute(&flight_data, prevStage);
+
 
     storage.write(&flight_data);
 
@@ -163,7 +166,7 @@ void loop() {
 
     Serial.print(flight_data.flight_time);
     Serial.print("ms, ");
-
+  
     oldalt = flight_data.alt;
 
 #endif
@@ -183,14 +186,13 @@ void loop() {
     }
 #endif
 
-#if ENABLE_ACCELEROMETER
+#if ENABLE_ACCELEROMETER 
 
     flight_data.acc.print("Local Acceleration", true);
     flight_data.rotAcc.print("Global Acceleration", true);
     flight_data.rot.print("Rotation Vector", true);
 
 #endif
-
 /*    Serial.println();
     Serial.print(written);
     Serial.println(" bytes to file write-buffer");
