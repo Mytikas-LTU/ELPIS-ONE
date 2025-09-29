@@ -166,8 +166,8 @@ void loop() {
         max_alt_height = flight_data.alt;
         max_alt_time = flight_data.flight_time;
     }
-    // Check if the altitude has dropped significantly (3m) during a 1s time frame
-    if (flight_data.alt + FALL_DIST < max_alt_height && flight_data.parachute_state == 0) { //&& in_flight == 1
+    // Check if the altitude has dropped significantly (FALL_DIST m) during a 1s time frame
+    if (flight_data.alt + (FALL_DIST/sampleRate) < max_alt_height && flight_data.parachute_state == 0) { //&& in_flight == 1
         flight_data.parachute_state = 1; // Deploy parachute
     }
 #endif
@@ -180,13 +180,7 @@ void loop() {
 
 #endif
 
-/*    Serial.println();
-    Serial.print(written);
-    Serial.println(" bytes to file write-buffer");
-*/
-
-    //Serial.println();
-    // constant time loop
+    // Constant time loop
     digitalWrite(LED_PIN,LOW);
     Serial.println();
     while(millis()-lastLoop < 1000/sampleRate) {}

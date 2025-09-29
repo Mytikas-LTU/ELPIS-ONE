@@ -1,6 +1,6 @@
 #
 #    A tool to analyze data created by the electronics package, after recovery of the craft
-#    Author: Auri Åhs
+#    Author: Aurora Åhs
 #
 
 with open("tele.txt", "br") as f:
