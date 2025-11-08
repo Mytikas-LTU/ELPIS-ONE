@@ -1,10 +1,10 @@
 /***************************************************************************
-    Author: Aurora Å, Isak H, Elias R, Alexander B, Gustav M
+    Author: Aurora Å, Isak H, Elias R, Alexander B, Gustav M, Alice J
     Full telemetry and logging suite.
  ***************************************************************************/
 #include <Wire.h>
 #include <SPI.h>
-#include<Servo.h>
+#include <Servo.h>
 #include "stage_recognition.h"
 #include "accelerometer.h"
 #include "Barometer.h"
@@ -16,6 +16,8 @@
 #define BMP_MOSI (11)
 #define BMP_CS   (10)
 #define SERVO_PIN (9)
+#define SOLENOID_PIN (16) // A1
+#define PIEZO_PIN (17) // A2
 
 // Define constants in the code
 #define SERVO_OPEN 0
@@ -48,6 +50,7 @@ struct telemetry flight_data;
 long begin_flight_time = 0;
 int in_flight = 0;
 int parachute_arm = 0;
+int solenoid_deployed = 0;
 
 void setup() {
     long int boottime = millis();
@@ -55,8 +58,12 @@ void setup() {
     pinMode(ERROR_LED_PIN,OUTPUT);
     pinMode(LAUNCH_LED_PIN,OUTPUT);
     pinMode(CARD_LED_PIN,OUTPUT);
+    pinMode(SOLENOID_PIN, OUTPUT);
+    pinMode(PIEZO_PIN, OUTPUT);
     digitalWrite(LAUNCH_LED_PIN,LOW);
     digitalWrite(ERROR_LED_PIN,LOW);
+    digitalWrite(SOLENOID_PIN,LOW);
+    digitalWrite(PIEZO_PIN,LOW);
     Serial.begin(9600);
     Wire.begin();
     Wire.setClock(400000);
@@ -122,8 +129,11 @@ void loop() {
         Serial.println("begin flight!!----------------------------------------");
         Serial.println("begin flight!!----------------------------------------");
         Serial.println("begin flight!!----------------------------------------");
-       begin_flight_time = millis();
-       in_flight = 1;
+        begin_flight_time = millis();
+        in_flight = 1;
+#if ENABLE_PIEZO
+        digitalWrite(PIEZO_PIN, HIGH);
+#endif
     }
     if (parachute_arm) {
         digitalWrite(CARD_LED_PIN,HIGH);
@@ -143,6 +153,18 @@ void loop() {
     }
 #endif
 
+#if ENABLE_SOLENOID
+    // Will deploy the solenoid during one sample cycle. If this is not enough timing will need to be added. 
+    // Since we are overvolting the solenoid we do not want it activated for an extended period of time.
+    if(flight_data.parachute_state == 1 && solenoid_deployed == 0) {
+        digitalWrite(SOLENOID_PIN, HIGH);
+        solenoid_deployed = 1;
+    }
+    else {
+        digitalWrite(SOLENOID_PIN, LOW);
+    }
+#endif
+
 #if ENABLE_BAROMETER || ENABLE_DUMMYDATA
 
     Serial.print(flight_data.pres - flight_data.base_pres*100);
@@ -150,9 +172,6 @@ void loop() {
 
     Serial.print(flight_data.alt);
     Serial.print(" m, ");
-
-   // Serial.print("State of flight,");
-   // Serial.print(prevStage);
 
     Serial.print("Parachute:");
     Serial.print(flight_data.parachute_state);
@@ -168,7 +187,7 @@ void loop() {
 
 #endif
 
-#if ENABLE_SERVO && ENABLE_BAROMETER
+#if (ENABLE_SERVO || ENABLE_SOLENOID) && ENABLE_BAROMETER
     if(flight_data.alt >= ARM_DIST) {
         parachute_arm = 1;
     }
