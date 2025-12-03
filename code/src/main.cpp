@@ -96,8 +96,6 @@ void setup() {
     shuteServo.write(SERVO_LOCKED);
     Serial.println("Servo in LOCKED position");
 #endif
-    digitalWrite(LAUNCH_LED_PIN,HIGH);
-
 }
 
 void loop() {
@@ -131,6 +129,7 @@ void loop() {
         Serial.println("begin flight!!----------------------------------------");
         begin_flight_time = millis();
         in_flight = 1;
+        digitalWrite(LAUNCH_LED_PIN,HIGH);
 #if ENABLE_PIEZO
         digitalWrite(PIEZO_PIN, HIGH);
 #endif
