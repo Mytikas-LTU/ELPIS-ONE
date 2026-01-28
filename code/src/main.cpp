@@ -4,7 +4,6 @@
  ***************************************************************************/
 #include <Wire.h>
 #include <SPI.h>
-#include <Servo.h>
 #include "stage_recognition.h"
 #include "accelerometer.h"
 #include "Barometer.h"
@@ -15,21 +14,16 @@
 #define BMP_MISO (12)
 #define BMP_MOSI (11)
 #define BMP_CS   (10)
-#define SERVO_PIN (9)
 #define SOLENOID_PIN (16) // A1
 #define PIEZO_PIN (17) // A2
 
 // Define constants in the code
-#define SERVO_OPEN 0
-#define SERVO_LOCKED 180
-#define FALL_DIST 1    // distance needed to fall
-#define ARM_DIST 2     // distance to arm parachute
+#define FALL_DIST 0    // distance needed to fall
+#define ARM_DIST -100     // distance to arm parachute
 
 Barometer barom_sensor;
 Accelerometer acc_sensor;
 Storage storage;
-
-Servo shuteServo;
 
 struct rot_acc {
     float xr;
@@ -51,6 +45,7 @@ long begin_flight_time = 0;
 int in_flight = 0;
 int parachute_arm = 0;
 int solenoid_deployed = 0;
+int times_looped_since_solenoid_deployed;
 
 void setup() {
     long int boottime = millis();
@@ -76,26 +71,12 @@ void setup() {
     flash(3);
     delay(flashTime*3);
 
-#if ENABLE_SERVO
-    Serial.println("Enabling servo");
-    shuteServo.attach(9);
-    shuteServo.write(SERVO_OPEN);
-    Serial.println("Servo in OPEN position");
-#else
-    Serial.println("Servo disabled");
-#endif
-
     acc_sensor.init();
     barom_sensor.init();
     storage.init();
 
     flight_data.base_pres = barom_sensor.calibrate();
     storage.writeHeader(&flight_data);
-
-#if ENABLE_SERVO
-    shuteServo.write(SERVO_LOCKED);
-    Serial.println("Servo in LOCKED position");
-#endif
 }
 
 void loop() {
@@ -120,8 +101,7 @@ void loop() {
 #if ENABLE_DUMMYDATA
     gen_dummy_data(&flight_data, alt_index, prevStage);
 #endif
-    if (flight_data.acc.y < -12.00 && begin_flight_time == 0)
-    {
+    if (sqrt((pow(flight_data.acc.x, 2) + pow(flight_data.acc.y, 2) + pow(flight_data.acc.z, 2))) > 12.00 && begin_flight_time == 0) {
         Serial.println("begin flight!!----------------------------------------");
         Serial.println("begin flight!!----------------------------------------");
         Serial.println("begin flight!!----------------------------------------");
@@ -143,19 +123,13 @@ void loop() {
 
     storage.write(&flight_data);
 
-#if ENABLE_SERVO
-    if(flight_data.parachute_state == 1){
-        shuteServo.write(SERVO_OPEN);
-    }
-    else {
-        shuteServo.write(SERVO_LOCKED);
-    }
-#endif
-
 #if ENABLE_SOLENOID
+    if (solenoid_deployed == 1) {
+        times_looped_since_solenoid_deployed += 1;
+    }
     // Will deploy the solenoid during one sample cycle. If this is not enough timing will need to be added. 
     // Since we are overvolting the solenoid we do not want it activated for an extended period of time.
-    if(flight_data.parachute_state == 1 && solenoid_deployed == 0) {
+    if(flight_data.parachute_state == 1 && times_looped_since_solenoid_deployed <= sampleRate) {
         digitalWrite(SOLENOID_PIN, HIGH);
         solenoid_deployed = 1;
     }
@@ -186,7 +160,7 @@ void loop() {
 
 #endif
 
-#if (ENABLE_SERVO || ENABLE_SOLENOID) && ENABLE_BAROMETER
+#if ENABLE_SOLENOID && ENABLE_BAROMETER
     if(flight_data.alt >= ARM_DIST) {
         parachute_arm = 1;
     }
@@ -196,7 +170,7 @@ void loop() {
         max_alt_time = flight_data.flight_time;
     }
     // Check if the altitude has dropped significantly (FALL_DIST m) during a 1s time frame
-    if (flight_data.alt + (FALL_DIST/sampleRate) < max_alt_height && flight_data.parachute_state == 0 && parachute_arm) { //&& in_flight == 1
+    if (flight_data.alt + (FALL_DIST/sampleRate) < max_alt_height && flight_data.parachute_state == 0 && parachute_arm && in_flight) {
         flight_data.parachute_state = 1; // Deploy parachute
     }
 #endif
