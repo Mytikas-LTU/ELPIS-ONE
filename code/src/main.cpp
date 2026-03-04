@@ -20,7 +20,6 @@
 // Define constants in the code
 #define FALL_DIST 0    // distance needed to fall
 #define ARM_DIST -100     // distance to arm parachute
-
 Barometer barom_sensor;
 Accelerometer acc_sensor;
 Storage storage;
@@ -45,7 +44,7 @@ long begin_flight_time = 0;
 int in_flight = 0;
 int parachute_arm = 0;
 int solenoid_deployed = 0;
-int times_looped_since_solenoid_deployed;
+int times_looped_since_solenoid_deployed = 0;
 
 void setup() {
     long int boottime = millis();
@@ -169,8 +168,8 @@ void loop() {
         max_alt_height = flight_data.alt;
         max_alt_time = flight_data.flight_time;
     }
-    // Check if the altitude has dropped significantly (FALL_DIST m) during a 1s time frame
-    if (flight_data.alt + (FALL_DIST/sampleRate) < max_alt_height && flight_data.parachute_state == 0 && parachute_arm && in_flight) {
+    // Check if the altitude has dropped significantly (FALL_DIST m) from the max height reached
+    if (flight_data.alt + FALL_DIST < max_alt_height && flight_data.parachute_state == 0 && parachute_arm && in_flight) {
         flight_data.parachute_state = 1; // Deploy parachute
     }
 #endif
