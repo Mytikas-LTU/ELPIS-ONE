@@ -63,14 +63,43 @@ void Storage::writeHeader(telemetry* data){
 
 void Storage::write(telemetry* data){
 #if ENABLE_LOGGING
-    ptr += 1;
-    file.write((byte *) data, sizeof(*data));
-    if(ptr >= 10) {
-        digitalWrite(CARD_LED_PIN,HIGH);
-        file.flush();
-        Serial.println("Written to file!");
-        ptr = 0;
-        digitalWrite(CARD_LED_PIN,LOW);
-    }
+    file.print("Local Acceleration: ");
+    file.print(data->acc.x);
+    file.print(", ");
+    file.print(data->acc.y);
+    file.print(", ");
+    file.println(data->acc.z);
+
+    file.print("Global Acceleration: ");
+    file.print(data->rotAcc.x);
+    file.print(", ");
+    file.print(data->rotAcc.y);
+    file.print(", ");
+    file.println(data->rotAcc.z);
+
+    file.print("Quaternion Rotation: ");
+    file.print(data->rot.i);
+    file.print(", ");
+    file.print(data->rot.j);
+    file.print(", ");
+    file.print(data->rot.k);
+    file.print(", ");
+    file.println(data->rot.r);
+
+    file.println("Other data:");
+    file.print(data->pres - data->base_pres*100);
+    file.print(" Pa, ");
+
+    file.print(data->alt);
+    file.print(" m, ");
+
+    file.print("Parachute:");
+    file.print(data->parachute_state);
+    file.print(", ");
+
+    file.print(data->flight_time);
+    file.print("ms, ");
+
+    file.flush();
 #endif
 }

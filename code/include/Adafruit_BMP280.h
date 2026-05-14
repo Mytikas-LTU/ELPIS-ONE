@@ -11,7 +11,7 @@
  *  These sensors use I2C to communicate, 2 pins are required to interface.
  *
  *  Adafruit invests time and resources providing this open source code,
- *  please support Adafruit andopen-source hardware by purchasing products
+ *  please support Adafruit and open-source hardware by purchasing products
  *  from Adafruit!
  *
  *  K.Townsend (Adafruit Industries)

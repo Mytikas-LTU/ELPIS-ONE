@@ -34,7 +34,7 @@ void Accelerometer::init(){
     //initialize the BNO
     sensor = Adafruit_BNO08x(-1);
     Serial.println("Init BNO085!");
-    while(!sensor.begin_I2C()){
+    if (!sensor.begin_I2C()){
         Serial.println("BNO init Error");
         digitalWrite(ERROR_LED_PIN, HIGH);
         delay(10);
