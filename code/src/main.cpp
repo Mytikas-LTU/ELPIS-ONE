@@ -18,8 +18,8 @@
 #define PIEZO_PIN (17) // A2
 
 // Define constants in the code
-#define FALL_DIST 0    // distance needed to fall
-#define ARM_DIST -100     // distance to arm parachute
+#define FALL_DIST 1    // distance needed to fall
+#define ARM_DIST 2     // distance to arm parachute
 Barometer barom_sensor;
 Accelerometer acc_sensor;
 Storage storage;
